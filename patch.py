@@ -7,13 +7,33 @@
     Copyright (c) 2008-2016 anatoly techtonik
     Available under the terms of MIT license
 
+---
+    The MIT License (MIT)
+
+    Copyright (c) 2019 JFrog LTD
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+    and associated documentation files (the "Software"), to deal in the Software without
+    restriction, including without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all copies or
+    substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+    PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+    ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
 """
 from __future__ import print_function
 
-__author__ = "anatoly techtonik <techtonik@gmail.com>"
-__version__ = "1.16"
+__author__ = "Conan.io <info@conan.io>"
+__version__ = "1.17"
 __license__ = "MIT"
-__url__ = "https://github.com/techtonik/python-patch"
+__url__ = "https://github.com/conan-io/python-patch"
 
 import copy
 import logging
@@ -894,25 +914,12 @@ class PatchSet(object):
 
       filenameo, filenamen = self.findfiles(old, new)
 
-      if not filename:
-          if "dev/null" in old:
-              # this is a file creation
-              filename = self._strip_prefix(new)
-              # I wish there would be something more clean to get the full contents
-              new_file = "".join(s[1:] for s in p.hunks[0].text)
-              with open(filename, "wb") as f:
-                  f.write(new_file)
-              continue
-          elif "dev/null" in new:
-              # this is a file removal
-              os.remove(self._strip_prefix(old))
-              continue
-          else:
-              warning("source/target file does not exist:\n  --- %s\n  +++ %s" % (old, new))
-              errors += 1
-              continue
-      if not isfile(filename):
-        warning("not a file - %s" % filename)
+      if not filenameo or not filenamen:
+        warning("source/target file does not exist:\n  --- %s\n  +++ %s" % (old, new))
+        errors += 1
+        continue
+      if not isfile(filenameo):
+        warning("not a file - %s" % filenameo)
         errors += 1
         continue
 

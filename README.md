@@ -1,6 +1,19 @@
-Library to parse and apply unified diffs.
+[![PyPI](https://img.shields.io/pypi/v/patch-ng)](https://pypi.python.org/pypi/patch-ng)
 
-[![Build Status](https://img.shields.io/travis/techtonik/python-patch/master)](https://travis-ci.org/techtonik/python-patch/branches) [![PyPI](https://img.shields.io/pypi/v/patch)](https://pypi.python.org/pypi/patch)
+## Patch NG (New Generation)
+
+#### Library to parse and apply unified diffs.
+
+#### Why did we fork this project?
+
+This project is a fork from the original [python-patch](https://github.com/techtonik/python-patch) project.
+
+As any other project, bugs are common during the development process, the combination of issues + pull requests are
+able to keep the constant improvement of a project. However, both community and author need to be aligned. When users,
+developers, the community, needs a fix which are important for their projects, but there is no answer from the author,
+or the time for response is not enough, then the most plausible way is forking and continuing a parallel development.
+
+That's way we forked the original and accepted most of PRs waiting for review since jun/2019 (5 months from now).
 
 ### Features
 
@@ -32,8 +45,8 @@ module without external dependencies.
     patch.py diff.patch
 
 You can also run the .zip file.
-    
-    python patch-1.16.zip diff.patch
+
+    python patch-1.17.zip diff.patch
 
 ### Installation
 
@@ -42,13 +55,11 @@ and use it from here. This setup will always be repeatable. But if
 you need to add `patch` module as a dependency, make sure to use strict
 specifiers to avoid hitting an API break when version 2 is released:
 
-    pip install "patch==1.*"
+    pip install "patch-ng"
 
 
 ### Other stuff
 
 * [CHANGES](doc/CHANGES.md)
-* [LICENSE](doc/LICENSE)
+* [LICENSE: MIT](LICENSE)
 * [CREDITS](doc/CREDITS)
-
-* [test coverage](http://techtonik.github.io/python-patch/tests/coverage/)
