@@ -2,22 +2,43 @@
 """
     Patch utility to apply unified diffs
 
-    Brute-force line-by-line non-recursive parsing 
+    Brute-force line-by-line non-recursive parsing
 
     Copyright (c) 2008-2016 anatoly techtonik
     Available under the terms of MIT license
 
+---
+    The MIT License (MIT)
+
+    Copyright (c) 2019 JFrog LTD
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+    and associated documentation files (the "Software"), to deal in the Software without
+    restriction, including without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all copies or
+    substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+    PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+    ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
 """
 from __future__ import print_function
 
-__author__ = "anatoly techtonik <techtonik@gmail.com>"
-__version__ = "1.16"
+__author__ = "Conan.io <info@conan.io>"
+__version__ = "1.17"
 __license__ = "MIT"
-__url__ = "https://github.com/techtonik/python-patch"
+__url__ = "https://github.com/conan-io/python-patch"
 
 import copy
 import logging
 import re
+import tempfile
 
 # cStringIO doesn't support unicode in 2.5
 try:
@@ -53,7 +74,7 @@ def tostr(b):
 
   # [ ] figure out how to print non-utf-8 filenames without
   #     information loss
-  return b.decode('utf-8')    
+  return b.decode('utf-8')
 
 
 #------------------------------------------------
@@ -232,7 +253,7 @@ class Patch(object):
       If used as an iterable, returns hunks.
   """
   def __init__(self):
-    self.source = None 
+    self.source = None
     self.target = None
     self.hunks = []
     self.hunkends = []
@@ -338,7 +359,7 @@ class PatchSet(object):
 
     # regexp to match start of hunk, used groups - 1,3,4,6
     re_hunk_start = re.compile(b"^@@ -(\d+)(,(\d+))? \+(\d+)(,(\d+))? @@")
-    
+
     self.errors = 0
     # temp buffers for header and filenames info
     header = []
@@ -368,13 +389,13 @@ class PatchSet(object):
             header.append(fe.line)
             fe.next()
         if fe.is_empty:
-            if p == None:
+            if p is None:
               debug("no patch data found")  # error is shown later
               self.errors += 1
             else:
               info("%d unparsed bytes left at the end of stream" % len(b''.join(header)))
               self.warnings += 1
-              # TODO check for \No new line at the end.. 
+              # TODO check for \No new line at the end..
               # TODO test for unparsed bytes
               # otherwise error += 1
             # this is actually a loop exit
@@ -407,7 +428,7 @@ class PatchSet(object):
               p.hunkends["lf"] += 1
             elif line.endswith(b"\r"):
               p.hunkends["cr"] += 1
-              
+
             if line.startswith(b"-"):
               hunkactual["linessrc"] += 1
             elif line.startswith(b"+"):
@@ -477,11 +498,26 @@ class PatchSet(object):
             # XXX header += srcname
             # double source filename line is encountered
             # attempt to restart from this second line
-          re_filename = b"^--- ([^\t]+)"
-          match = re.match(re_filename, line)
+
+            # Files dated at Unix epoch don't exist, e.g.:
+            # '1970-01-01 01:00:00.000000000 +0100'
+            # They include timezone offsets.
+            # .. which can be parsed (if we remove the nanoseconds)
+            # .. by strptime() with:
+            # '%Y-%m-%d %H:%M:%S %z'
+            # .. but unfortunately this relies on the OSes libc
+            # strptime function and %z support is patchy, so we drop
+            # everything from the . onwards and group the year and time
+            # separately.
+          re_filename_date_time = b"^--- ([^\t]+)(?:\s([0-9-]+)\s([0-9:]+)|.*)"
+          match = re.match(re_filename_date_time, line)
           # todo: support spaces in filenames
           if match:
             srcname = match.group(1).strip()
+            date = match.group(2)
+            time = match.group(3)
+            if (date == b'1970-01-01' or date == b'1969-12-31') and time.split(b':',1)[1] == b'00:00':
+              srcname = b'/dev/null'
           else:
             warning("skipping invalid filename at line %d" % (lineno+1))
             self.errors += 1
@@ -503,7 +539,7 @@ class PatchSet(object):
           headscan = True
         else:
           if tgtname != None:
-            # XXX seems to be a dead branch  
+            # XXX seems to be a dead branch
             warning("skipping invalid patch - double target at line %d" % (lineno+1))
             self.errors += 1
             srcname = None
@@ -516,8 +552,8 @@ class PatchSet(object):
             filenames = False
             headscan = True
           else:
-            re_filename = b"^\+\+\+ ([^\t]+)"
-            match = re.match(re_filename, line)
+            re_filename_date_time = b"^\+\+\+ ([^\t]+)(?:\s([0-9-]+)\s([0-9:]+)|.*)"
+            match = re.match(re_filename_date_time, line)
             if not match:
               warning("skipping invalid patch - no target filename at line %d" % (lineno+1))
               self.errors += 1
@@ -526,12 +562,18 @@ class PatchSet(object):
               filenames = False
               headscan = True
             else:
+              tgtname = match.group(1).strip()
+              date = match.group(2)
+              time = match.group(3)
+              if (date == b'1970-01-01' or date == b'1969-12-31') and time.split(b':',1)[1] == b'00:00':
+                  tgtname = b'/dev/null'
               if p: # for the first run p is None
                 self.items.append(p)
               p = Patch()
               p.source = srcname
               srcname = None
-              p.target = match.group(1).strip()
+              p.target = tgtname
+              tgtname = None
               p.header = header
               header = []
               # switch to hunkhead state
@@ -590,7 +632,7 @@ class PatchSet(object):
           warning("error: no patch data found!")
           return False
         else: # extra data at the end of file
-          pass 
+          pass
       else:
         warning("error: patch stream is incomplete!")
         self.errors += 1
@@ -616,7 +658,7 @@ class PatchSet(object):
     # --------
 
     self._normalize_filenames()
-    
+
     return (self.errors == 0)
 
   def _detect_type(self, p):
@@ -654,19 +696,19 @@ class PatchSet(object):
           break
       if p.header[idx].startswith(b'diff --git a/'):
         if (idx+1 < len(p.header)
-            and re.match(b'index \\w{7}..\\w{7} \\d{6}', p.header[idx+1])):
+            and re.match(b'(?:index \\w{7}..\\w{7} \\d{6}|new file mode \\d*)', p.header[idx+1])):
           if DVCS:
             return GIT
 
     # HG check
-    # 
+    #
     #  - for plain HG format header is like "diff -r b2d9961ff1f5 filename"
     #  - for Git-style HG patches it is "diff --git a/oldname b/newname"
     #  - filename starts with a/, b/ or is equal to /dev/null
     #  - exported changesets also contain the header
     #    # HG changeset patch
     #    # User name@example.com
-    #    ...   
+    #    ...
     # TODO add MQ
     # TODO add revision info
     if len(p.header) > 0:
@@ -689,25 +731,24 @@ class PatchSet(object):
 
         [x] always use forward slashes to be crossplatform
             (diff/patch were born as a unix utility after all)
-        
+
         return None
     """
     if debugmode:
       debug("normalize filenames")
     for i,p in enumerate(self.items):
       if debugmode:
-        debug("    patch type = " + p.type)
-        debug("    source = " + p.source)
-        debug("    target = " + p.target)
+        debug("    patch type = %s" % p.type)
+        debug("    source = %s" % p.source)
+        debug("    target = %s" % p.target)
       if p.type in (HG, GIT):
-        # TODO: figure out how to deal with /dev/null entries
         debug("stripping a/ and b/ prefixes")
-        if p.source != '/dev/null':
+        if p.source != b'/dev/null':
           if not p.source.startswith(b"a/"):
             warning("invalid source filename")
           else:
             p.source = p.source[2:]
-        if p.target != '/dev/null':
+        if p.target != b'/dev/null':
           if not p.target.startswith(b"b/"):
             warning("invalid target filename")
           else:
@@ -730,16 +771,17 @@ class PatchSet(object):
         while p.target.startswith(b".." + sep):
           p.target = p.target.partition(sep)[2]
       # absolute paths are not allowed
-      if xisabs(p.source) or xisabs(p.target):
+      if (xisabs(p.source) and p.source != b'/dev/null') or \
+         (xisabs(p.target) and p.target != b'/dev/null'):
         warning("error: absolute paths are not allowed - file no.%d" % (i+1))
         self.warnings += 1
-        if xisabs(p.source):
+        if xisabs(p.source) and p.source != b'/dev/null':
           warning("stripping absolute path from source name '%s'" % p.source)
           p.source = xstrip(p.source)
-        if xisabs(p.target):
+        if xisabs(p.target) and p.target != b'/dev/null':
           warning("stripping absolute path from target name '%s'" % p.target)
           p.target = xstrip(p.target)
-    
+
       self.items[i].source = p.source
       self.items[i].target = p.target
 
@@ -795,18 +837,30 @@ class PatchSet(object):
         hist = "+"*int(iwidth) + "-"*int(dwidth)
       # -- /calculating +- histogram --
       output += (format % (tostr(names[i]), str(insert[i] + delete[i]), hist))
- 
+
     output += (" %d files changed, %d insertions(+), %d deletions(-), %+d bytes"
                % (len(names), sum(insert), sum(delete), delta))
     return output
 
 
-  def findfile(self, old, new):
-    """ return name of file to be patched or None """
-    if exists(old):
-      return old
+  def findfiles(self, old, new):
+    """ return tuple of source file, target file """
+    if old == b'/dev/null':
+      handle, abspath = tempfile.mkstemp(suffix='pypatch')
+      abspath = abspath.encode()
+      # The source file must contain a line for the hunk matching to succeed.
+      os.write(handle, b' ')
+      os.close(handle)
+      if not exists(new):
+        handle = open(new, 'wb')
+        handle.close()
+      return abspath, new
+    elif exists(old):
+      return old, old
     elif exists(new):
-      return new
+      return new, new
+    elif new == b'/dev/null':
+      return None, None
     else:
       # [w] Google Code generates broken patches with its online editor
       debug("broken patch from Google Code, stripping prefixes..")
@@ -815,11 +869,15 @@ class PatchSet(object):
         debug("   %s" % old)
         debug("   %s" % new)
         if exists(old):
-          return old
+          return old, old
         elif exists(new):
-          return new
-      return None
+          return new, new
+      return None, None
 
+  def _strip_prefix(self, filename):
+    if filename.startswith(b'a/') or filename.startswith(b'b/'):
+        return filename[2:]
+    return filename
 
   def apply(self, strip=0, root=None):
     """ Apply parsed patch, optionally stripping leading components
@@ -849,27 +907,27 @@ class PatchSet(object):
         debug("stripping %s leading component(s) from:" % strip)
         debug("   %s" % p.source)
         debug("   %s" % p.target)
-        old = pathstrip(p.source, strip)
-        new = pathstrip(p.target, strip)
+        old = p.source if p.source == b'/dev/null' else pathstrip(p.source, strip)
+        new = p.target if p.target == b'/dev/null' else pathstrip(p.target, strip)
       else:
         old, new = p.source, p.target
 
-      filename = self.findfile(old, new)
+      filenameo, filenamen = self.findfiles(old, new)
 
-      if not filename:
-          warning("source/target file does not exist:\n  --- %s\n  +++ %s" % (old, new))
-          errors += 1
-          continue
-      if not isfile(filename):
-        warning("not a file - %s" % filename)
+      if not filenameo or not filenamen:
+        warning("source/target file does not exist:\n  --- %s\n  +++ %s" % (old, new))
+        errors += 1
+        continue
+      if not isfile(filenameo):
+        warning("not a file - %s" % filenameo)
         errors += 1
         continue
 
       # [ ] check absolute paths security here
-      debug("processing %d/%d:\t %s" % (i+1, total, filename))
+      debug("processing %d/%d:\t %s" % (i+1, total, filenamen))
 
       # validate before patching
-      f2fp = open(filename, 'rb')
+      f2fp = open(filenameo, 'rb')
       hunkno = 0
       hunk = p.hunks[hunkno]
       hunkfind = []
@@ -892,7 +950,7 @@ class PatchSet(object):
           if line.rstrip(b"\r\n") == hunkfind[hunklineno]:
             hunklineno+=1
           else:
-            info("file %d/%d:\t %s" % (i+1, total, filename))
+            info("file %d/%d:\t %s" % (i+1, total, filenamen))
             info(" hunk no.%d doesn't match source file at line %d" % (hunkno+1, lineno+1))
             info("  expected: %s" % hunkfind[hunklineno])
             info("  actual  : %s" % line.rstrip(b"\r\n"))
@@ -912,8 +970,8 @@ class PatchSet(object):
               break
 
         # check if processed line is the last line
-        if lineno+1 == hunk.startsrc+len(hunkfind)-1:
-          debug(" hunk no.%d for file %s  -- is ready to be patched" % (hunkno+1, filename))
+        if len(hunkfind) == 0 or lineno+1 == hunk.startsrc+len(hunkfind)-1:
+          debug(" hunk no.%d for file %s  -- is ready to be patched" % (hunkno+1, filenamen))
           hunkno+=1
           validhunks+=1
           if hunkno < len(p.hunks):
@@ -925,34 +983,39 @@ class PatchSet(object):
               break
       else:
         if hunkno < len(p.hunks):
-          warning("premature end of source file %s at hunk %d" % (filename, hunkno+1))
+          warning("premature end of source file %s at hunk %d" % (filenameo, hunkno+1))
           errors += 1
 
       f2fp.close()
 
       if validhunks < len(p.hunks):
-        if self._match_file_hunks(filename, p.hunks):
-          warning("already patched  %s" % filename)
+        if self._match_file_hunks(filenameo, p.hunks):
+          warning("already patched  %s" % filenameo)
         else:
-          warning("source file is different - %s" % filename)
+          warning("source file is different - %s" % filenameo)
           errors += 1
       if canpatch:
-        backupname = filename+b".orig"
+        backupname = filenamen+b".orig"
         if exists(backupname):
           warning("can't backup original file to %s - aborting" % backupname)
+          errors += 1
         else:
-          import shutil
-          shutil.move(filename, backupname)
-          if self.write_hunks(backupname, filename, p.hunks):
-            info("successfully patched %d/%d:\t %s" % (i+1, total, filename))
+          shutil.move(filenamen, backupname)
+          if self.write_hunks(backupname if filenameo == filenamen else filenameo, filenamen, p.hunks):
+            info("successfully patched %d/%d:\t %s" % (i+1, total, filenamen))
             os.unlink(backupname)
+            if new == b'/dev/null':
+              # check that filename is of size 0 and delete it.
+              if os.path.getsize(filenamen) > 0:
+                warning("expected patched file to be empty as it's marked as deletion:\t %s" % filenamen)
+              os.unlink(filenamen)
           else:
             errors += 1
-            warning("error patching file %s" % filename)
-            shutil.copy(filename, filename+".invalid")
-            warning("invalid version is saved to %s" % filename+".invalid")
+            warning("error patching file %s" % filenamen)
+            shutil.copy(filenamen, filenamen+".invalid")
+            warning("invalid version is saved to %s" % filenamen+".invalid")
             # todo: proper rejects
-            shutil.move(backupname, filename)
+            shutil.move(backupname, filenamen)
 
     if root:
       os.chdir(prevdir)
@@ -1005,7 +1068,6 @@ class PatchSet(object):
 
     lineno = 1
     line = fp.readline()
-    hno = None
     try:
       for hno, h in enumerate(hunks):
         # skip to first line of the hunk
@@ -1038,7 +1100,7 @@ class PatchSet(object):
 
   def patch_stream(self, instream, hunks):
     """ Generator that yields stream patched with hunks iterable
-    
+
         Converts lineends in hunk lines to the best suitable format
         autodetected from input
     """
@@ -1091,7 +1153,7 @@ class PatchSet(object):
             yield line2write.rstrip(b"\r\n")+newline
           else: # newlines are mixed
             yield line2write
-     
+
     for line in instream:
       yield line
 
