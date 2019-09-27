@@ -79,7 +79,7 @@ def tostr(b):
 
 #------------------------------------------------
 # Logging is controlled by logger named after the
-# module name (e.g. 'patch' for patch.py module)
+# module name (e.g. 'patch' for patch_ng.py module)
 
 logger = logging.getLogger(__name__)
 
@@ -1247,7 +1247,7 @@ def main():
   else:
     patch.apply(options.strip, root=options.directory) or sys.exit(-1)
 
-  # todo: document and test line ends handling logic - patch.py detects proper line-endings
+  # todo: document and test line ends handling logic - patch_ng.py detects proper line-endings
   #       for inserted hunks and issues a warning if patched file has incosistent line ends
 
 

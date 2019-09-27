@@ -41,10 +41,10 @@ if "-v" in sys.argv or "--verbose" in sys.argv:
 tests_dir = dirname(abspath(__file__))
 
 
-# import patch.py from parent directory
+# import patch_ng.py from parent directory
 save_path = sys.path
 sys.path.insert(0, dirname(tests_dir))
-import patch
+import patch_ng
 sys.path = save_path
 
 
@@ -68,7 +68,7 @@ class TestPatchFiles(unittest.TestCase):
           f2.close()
         if f1:
           f1.close()
-  
+
   def _assert_dirs_equal(self, dir1, dir2, ignore=[]):
       """ compare dir1 with reference dir2
           .svn dirs are ignored
@@ -94,7 +94,7 @@ class TestPatchFiles(unittest.TestCase):
           continue
         self.fail("extra file or directory: %s" % e2)
 
-  
+
   def _run_test(self, testname):
       """
       boilerplate for running *.patch file tests
@@ -102,7 +102,7 @@ class TestPatchFiles(unittest.TestCase):
 
       # 1. create temp test directory
       # 2. copy files
-      # 3. execute file-based patch 
+      # 3. execute file-based patch
       # 4. compare results
       # 5. cleanup on success
 
@@ -110,7 +110,7 @@ class TestPatchFiles(unittest.TestCase):
 
       patch_file = join(tmpdir, "%s.patch" % testname)
       shutil.copy(join(tests_dir, "%s.patch" % testname), patch_file)
-      
+
       from_src = join(tests_dir, "%s.from" % testname)
       from_tgt = join(tmpdir, "%s.from" % testname)
 
@@ -129,7 +129,7 @@ class TestPatchFiles(unittest.TestCase):
 
       # 3.
       # test utility as a whole
-      patch_tool = join(dirname(tests_dir), "patch.py")
+      patch_tool = join(dirname(tests_dir), "patch_ng.py")
       save_cwd = os.getcwdu()
       os.chdir(tmpdir)
       if verbose:
@@ -150,7 +150,7 @@ class TestPatchFiles(unittest.TestCase):
         # need recursive compare
         self._assert_dirs_equal(join(tests_dir, "%s.to" % testname), tmpdir, "%s.patch" % testname)
 
-        
+
 
       shutil.rmtree(tmpdir)
       return 0
@@ -200,7 +200,7 @@ class TestCheckPatched(unittest.TestCase):
         pto3 = patch.fromfile("03trail_fname.patch")
         self.assertEqual(None, pto3.can_patch("03trail_fname.to"))
         self.assertEqual(None, pto3.can_patch("not_in_source.also"))
-   
+
     def test_multiline_false_on_other_file(self):
         pto = patch.fromfile("01uni_multi.patch")
         os.chdir(join(tests_dir, "01uni_multi.from"))
