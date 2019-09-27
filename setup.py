@@ -31,7 +31,7 @@ def get_requires(filename):
 def load_version():
     """Loads a file content"""
     filename = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                            "patch.py"))
+                                            "patch_ng.py"))
     with open(filename, "rt") as version_file:
         content = version_file.read()
         version = re.search('__version__ = "([0-9a-z.-]+)"', content).group(1)
@@ -86,7 +86,7 @@ setup(
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
-    py_modules=["patch"],
+    py_modules=["patch_ng"],
 
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
