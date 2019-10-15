@@ -1,1 +1,5 @@
 *.pyc
+build
+dist
+.idea
+patch_ng.egg-info
