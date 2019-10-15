@@ -31,7 +31,7 @@
 from __future__ import print_function
 
 __author__ = "Conan.io <info@conan.io>"
-__version__ = "1.17"
+__version__ = "1.17.1"
 __license__ = "MIT"
 __url__ = "https://github.com/conan-io/python-patch"
 
@@ -39,6 +39,7 @@ import copy
 import logging
 import re
 import tempfile
+import codecs
 
 # cStringIO doesn't support unicode in 2.5
 try:
@@ -223,6 +224,73 @@ def pathstrip(path, n):
     pathlist[0:1] = os.path.split(pathlist[0])
   return b'/'.join(pathlist[n:])
 # --- /Utility function ---
+
+
+def decode_text(text):
+  encodings = {codecs.BOM_UTF8: "utf_8_sig",
+               codecs.BOM_UTF16_BE: "utf_16_be",
+               codecs.BOM_UTF16_LE: "utf_16_le",
+               codecs.BOM_UTF32_BE: "utf_32_be",
+               codecs.BOM_UTF32_LE: "utf_32_le",
+               b'\x2b\x2f\x76\x38': "utf_7",
+               b'\x2b\x2f\x76\x39': "utf_7",
+               b'\x2b\x2f\x76\x2b': "utf_7",
+               b'\x2b\x2f\x76\x2f': "utf_7",
+               b'\x2b\x2f\x76\x38\x2d': "utf_7"}
+  for bom in sorted(encodings, key=len, reverse=True):
+    if text.startswith(bom):
+      try:
+        return text[len(bom):].decode(encodings[bom])
+      except UnicodeDecodeError:
+        continue
+  decoders = ["utf-8", "Windows-1252"]
+  for decoder in decoders:
+    try:
+      return text.decode(decoder)
+    except UnicodeDecodeError:
+      continue
+  logger.warning("can't decode %s" % str(text))
+  return text.decode("utf-8", "ignore")  # Ignore not compatible characters
+
+
+def to_file_bytes(content):
+  if PY3K:
+    if not isinstance(content, bytes):
+      content = bytes(content, "utf-8")
+  elif isinstance(content, unicode):
+    content = content.encode("utf-8")
+  return content
+
+
+def load(path, binary=False):
+  """ Loads a file content """
+  with open(path, 'rb') as handle:
+    tmp = handle.read()
+    return tmp if binary else decode_text(tmp)
+
+
+def save(path, content, only_if_modified=False):
+  """
+  Saves a file with given content
+  Params:
+      path: path to write file to
+      content: contents to save in the file
+      only_if_modified: file won't be modified if the content hasn't changed
+  """
+  try:
+    os.makedirs(os.path.dirname(path))
+  except Exception:
+    pass
+
+  new_content = to_file_bytes(content)
+
+  if only_if_modified and os.path.exists(path):
+    old_content = load(path, binary=True)
+    if old_content == new_content:
+      return
+
+  with open(path, "wb") as handle:
+    handle.write(new_content)
 
 
 class Hunk(object):
@@ -879,11 +947,46 @@ class PatchSet(object):
         return filename[2:]
     return filename
 
+  def decode_clean(self, path, prefix):
+    path = path.decode("utf-8").replace("\\", "/")
+    if path.startswith(prefix):
+      path = path[2:]
+    return path
+
+  def strip_path(self, path, base_path, strip=0):
+    tokens = path.split("/")
+    if len(tokens) > 1:
+      tokens = tokens[strip:]
+    path = "/".join(tokens)
+    if base_path:
+      path = os.path.join(base_path, path)
+    return path
+    # account for new and deleted files, upstream dep won't fix them
+
+
+
+
   def apply(self, strip=0, root=None):
     """ Apply parsed patch, optionally stripping leading components
         from file paths. `root` parameter specifies working dir.
         return True on success
     """
+    items = []
+    for item in self.items:
+      source = self.decode_clean(item.source, "a/")
+      target = self.decode_clean(item.target, "b/")
+      if "dev/null" in source:
+        target = self.strip_path(target, root, strip)
+        hunks = [s.decode("utf-8") for s in item.hunks[0].text]
+        new_file = "".join(hunk[1:] for hunk in hunks)
+        save(target, new_file)
+      elif "dev/null" in target:
+        source = self.strip_path(source, root, strip)
+        os.unlink(source)
+      else:
+        items.append(item)
+    self.items = items
+
     if root:
       prevdir = os.getcwd()
       os.chdir(root)
