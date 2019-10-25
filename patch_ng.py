@@ -305,16 +305,6 @@ class Hunk(object):
     self.desc=''
     self.text=[]
 
-#  def apply(self, estream):
-#    """ write hunk data into enumerable stream
-#        return strings one by one until hunk is
-#        over
-#
-#        enumerable stream are tuples (lineno, line)
-#        where lineno starts with 0
-#    """
-#    pass
-
 
 class Patch(object):
   """ Patch for a single file.
@@ -1247,8 +1237,9 @@ class PatchSet(object):
           continue
         else:
           if not hline.startswith(b"+"):
-            get_line()
+            yield get_line()
             srclineno += 1
+            continue
           line2write = hline[1:]
           # detect if line ends are consistent in source file
           if sum([bool(lineends[x]) for x in lineends]) == 1:
