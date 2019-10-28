@@ -1044,31 +1044,30 @@ class PatchSet(object):
 
         # check hunks in source file
         if lineno+1 < hunk.startsrc+len(hunkfind)-1:
-          raw_line = line.rstrip(b"\r\n")
-          patch_line = hunkfind[hunklineno]
-          if (raw_line == patch_line) or \
-             (fuzz and (not raw_line.startswith(b"+") and not patch_line.startswith(b"+")) and
-             (not raw_line.startswith(b"-") and not patch_line.startswith(b"-"))):
-            hunklineno+=1
+          if line.rstrip(b"\r\n") == hunkfind[hunklineno]:
+            hunklineno += 1
           else:
-            info("file %d/%d:\t %s" % (i+1, total, filenamen))
-            info(" hunk no.%d doesn't match source file at line %d" % (hunkno+1, lineno+1))
-            info("  expected: %s" % hunkfind[hunklineno])
-            info("  actual  : %s" % line.rstrip(b"\r\n"))
-            # not counting this as error, because file may already be patched.
-            # check if file is already patched is done after the number of
-            # invalid hunks if found
-            # TODO: check hunks against source/target file in one pass
-            #   API - check(stream, srchunks, tgthunks)
-            #           return tuple (srcerrs, tgterrs)
-
-            # continue to check other hunks for completeness
-            hunkno += 1
-            if hunkno < len(p.hunks):
-              hunk = p.hunks[hunkno]
-              continue
+            warning("file %d/%d:\t %s" % (i+1, total, filenamen))
+            warning(" hunk no.%d doesn't match source file at line %d" % (hunkno+1, lineno+1))
+            warning("  expected: %s" % hunkfind[hunklineno])
+            warning("  actual  : %s" % line.rstrip(b"\r\n"))
+            if fuzz:
+              hunklineno += 1
             else:
-              break
+              # not counting this as error, because file may already be patched.
+              # check if file is already patched is done after the number of
+              # invalid hunks if found
+              # TODO: check hunks against source/target file in one pass
+              #   API - check(stream, srchunks, tgthunks)
+              #           return tuple (srcerrs, tgterrs)
+
+              # continue to check other hunks for completeness
+              hunkno += 1
+              if hunkno < len(p.hunks):
+                hunk = p.hunks[hunkno]
+                continue
+              else:
+                break
 
         # check if processed line is the last line
         if len(hunkfind) == 0 or lineno+1 == hunk.startsrc+len(hunkfind)-1:
@@ -1312,6 +1311,7 @@ def main():
                                            help="strip N path components from filenames")
   opt.add_option("--revert", action="store_true",
                                            help="apply patch in reverse order (unpatch)")
+  opt.add_option("-f", "--fuzz", action="store_true", dest="fuzz", help="Accept fuuzzy patches")
   (options, args) = opt.parse_args()
 
   if not args and sys.argv[-1:] != ['--']:
@@ -1350,7 +1350,7 @@ def main():
   if options.revert:
     patch.revert(options.strip, root=options.directory) or sys.exit(-1)
   else:
-    patch.apply(options.strip, root=options.directory) or sys.exit(-1)
+    patch.apply(options.strip, root=options.directory, fuzz=options.fuzz) or sys.exit(-1)
 
   # todo: document and test line ends handling logic - patch_ng.py detects proper line-endings
   #       for inserted hunks and issues a warning if patched file has incosistent line ends

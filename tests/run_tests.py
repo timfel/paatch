@@ -151,11 +151,12 @@ class TestPatchFiles(unittest.TestCase):
       patch_tool = join(dirname(TESTS), "patch_ng.py")
       save_cwd = getcwdu()
       os.chdir(tmpdir)
+      extra = "-f" if testname == "10fuzzy" else ""
       if verbose:
-        cmd = '%s %s "%s"' % (sys.executable, patch_tool, patch_file)
+        cmd = '%s %s %s "%s"' % (sys.executable, patch_tool, extra, patch_file)
         print("\n"+cmd)
       else:
-        cmd = '%s %s -q "%s"' % (sys.executable, patch_tool, patch_file)
+        cmd = '%s %s -q %s "%s"' % (sys.executable, patch_tool, extra, patch_file)
       ret = os.system(cmd)
       assert ret == 0, "Error %d running test %s" % (ret, testname)
       os.chdir(save_cwd)
