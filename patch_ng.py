@@ -957,9 +957,12 @@ class PatchSet(object):
 
 
 
-  def apply(self, strip=0, root=None):
+  def apply(self, strip=0, root=None, fuzz=False):
     """ Apply parsed patch, optionally stripping leading components
         from file paths. `root` parameter specifies working dir.
+        :param strip: Strip patch path
+        :param root: Folder to apply the patch
+        :param fuzz: Accept fuzzy patches
         return True on success
     """
     items = []
@@ -1044,7 +1047,7 @@ class PatchSet(object):
           raw_line = line.rstrip(b"\r\n")
           patch_line = hunkfind[hunklineno]
           if (raw_line == patch_line) or \
-             ((not raw_line.startswith(b"+") and not patch_line.startswith(b"+")) and
+             (fuzz and (not raw_line.startswith(b"+") and not patch_line.startswith(b"+")) and
              (not raw_line.startswith(b"-") and not patch_line.startswith(b"-"))):
             hunklineno+=1
           else:
@@ -1090,7 +1093,11 @@ class PatchSet(object):
         if self._match_file_hunks(filenameo, p.hunks):
           warning("already patched  %s" % filenameo)
         else:
-          warning("source file is different - %s" % filenameo)
+          if fuzz:
+            warning("source file is different - %s" % filenameo)
+          else:
+            error("source file is different - %s" % filenameo)
+            errors += 1
       if canpatch:
         backupname = filenamen+b".orig"
         if exists(backupname):

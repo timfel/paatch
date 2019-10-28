@@ -428,7 +428,7 @@ class TestPatchApply(unittest.TestCase):
         treeroot = join(self.tmpdir, 'rootparent')
         shutil.copytree(join(TESTS, '10fuzzy'), treeroot)
         pto = patch_ng.fromfile(join(TESTS, '10fuzzy/10fuzzy.patch'))
-        self.assertTrue(pto.apply(root=treeroot))
+        self.assertTrue(pto.apply(root=treeroot, fuzz=True))
 
 
 class TestHelpers(unittest.TestCase):
