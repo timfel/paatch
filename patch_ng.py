@@ -82,11 +82,12 @@ def tostr(b):
 # Logging is controlled by logger named after the
 # module name (e.g. 'patch' for patch_ng.py module)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("patch_ng")
 
 debug = logger.debug
 info = logger.info
 warning = logger.warning
+error = logger.error
 
 class NullHandler(logging.Handler):
   """ Copied from Python 2.7 to avoid getting
@@ -1008,11 +1009,11 @@ class PatchSet(object):
       filenameo, filenamen = self.findfiles(old, new)
 
       if not filenameo or not filenamen:
-        warning("source/target file does not exist:\n  --- %s\n  +++ %s" % (old, new))
+        error("source/target file does not exist:\n  --- %s\n  +++ %s" % (old, new))
         errors += 1
         continue
       if not isfile(filenameo):
-        warning("not a file - %s" % filenameo)
+        error("not a file - %s" % filenameo)
         errors += 1
         continue
 
@@ -1040,7 +1041,11 @@ class PatchSet(object):
 
         # check hunks in source file
         if lineno+1 < hunk.startsrc+len(hunkfind)-1:
-          if line.rstrip(b"\r\n") == hunkfind[hunklineno]:
+          raw_line = line.rstrip(b"\r\n")
+          patch_line = hunkfind[hunklineno]
+          if (raw_line == patch_line) or \
+             ((not raw_line.startswith(b"+") and not patch_line.startswith(b"+")) and
+             (not raw_line.startswith(b"-") and not patch_line.startswith(b"-"))):
             hunklineno+=1
           else:
             info("file %d/%d:\t %s" % (i+1, total, filenamen))
@@ -1076,7 +1081,7 @@ class PatchSet(object):
               break
       else:
         if hunkno < len(p.hunks):
-          warning("premature end of source file %s at hunk %d" % (filenameo, hunkno+1))
+          error("premature end of source file %s at hunk %d" % (filenameo, hunkno+1))
           errors += 1
 
       f2fp.close()
@@ -1086,7 +1091,6 @@ class PatchSet(object):
           warning("already patched  %s" % filenameo)
         else:
           warning("source file is different - %s" % filenameo)
-          errors += 1
       if canpatch:
         backupname = filenamen+b".orig"
         if exists(backupname):
