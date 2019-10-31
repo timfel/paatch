@@ -1043,7 +1043,7 @@ class PatchSet(object):
           # todo \ No newline at end of file
 
         # check hunks in source file
-        if lineno+1 < hunk.startsrc+len(hunkfind)-1:
+        if lineno+1 < hunk.startsrc+len(hunkfind):
           if line.rstrip(b"\r\n") == hunkfind[hunklineno]:
             hunklineno += 1
           else:

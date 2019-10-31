@@ -151,7 +151,7 @@ class TestPatchFiles(unittest.TestCase):
       patch_tool = join(dirname(TESTS), "patch_ng.py")
       save_cwd = getcwdu()
       os.chdir(tmpdir)
-      extra = "-f" if testname == "10fuzzy" else ""
+      extra = "-f" if "10fuzzy" in testname else ""
       if verbose:
         cmd = '%s %s %s "%s"' % (sys.executable, patch_tool, extra, patch_file)
         print("\n"+cmd)
@@ -425,10 +425,24 @@ class TestPatchApply(unittest.TestCase):
         pto.apply(strip=0, root=treeroot)
         self.assertFalse(os.path.exists(os.path.join(treeroot, 'deleted')))
 
-    def test_fuzzy_patch(self):
+    def test_fuzzy_patch_both(self):
         treeroot = join(self.tmpdir, 'rootparent')
         shutil.copytree(join(TESTS, '10fuzzy'), treeroot)
         pto = patch_ng.fromfile(join(TESTS, '10fuzzy/10fuzzy.patch'))
+        self.assertTrue(pto.apply(root=treeroot, fuzz=True))
+        self.assertFalse(pto.apply(root=treeroot, fuzz=False))
+
+    def test_fuzzy_patch_before(self):
+        treeroot = join(self.tmpdir, 'rootparent')
+        shutil.copytree(join(TESTS, '10fuzzybefore'), treeroot)
+        pto = patch_ng.fromfile(join(TESTS, '10fuzzybefore/10fuzzybefore.patch'))
+        self.assertTrue(pto.apply(root=treeroot, fuzz=True))
+        self.assertFalse(pto.apply(root=treeroot, fuzz=False))
+
+    def test_fuzzy_patch_after(self):
+        treeroot = join(self.tmpdir, 'rootparent')
+        shutil.copytree(join(TESTS, '10fuzzyafter'), treeroot)
+        pto = patch_ng.fromfile(join(TESTS, '10fuzzyafter/10fuzzyafter.patch'))
         self.assertTrue(pto.apply(root=treeroot, fuzz=True))
         self.assertFalse(pto.apply(root=treeroot, fuzz=False))
 
