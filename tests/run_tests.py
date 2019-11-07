@@ -151,11 +151,12 @@ class TestPatchFiles(unittest.TestCase):
       patch_tool = join(dirname(TESTS), "patch_ng.py")
       save_cwd = getcwdu()
       os.chdir(tmpdir)
+      extra = "-f" if "10fuzzy" in testname else ""
       if verbose:
-        cmd = '%s %s "%s"' % (sys.executable, patch_tool, patch_file)
+        cmd = '%s %s %s "%s"' % (sys.executable, patch_tool, extra, patch_file)
         print("\n"+cmd)
       else:
-        cmd = '%s %s -q "%s"' % (sys.executable, patch_tool, patch_file)
+        cmd = '%s %s -q %s "%s"' % (sys.executable, patch_tool, extra, patch_file)
       ret = os.system(cmd)
       assert ret == 0, "Error %d running test %s" % (ret, testname)
       os.chdir(save_cwd)
@@ -423,6 +424,27 @@ class TestPatchApply(unittest.TestCase):
         pto = patch_ng.fromfile(join(TESTS, '09delete/09delete.patch'))
         pto.apply(strip=0, root=treeroot)
         self.assertFalse(os.path.exists(os.path.join(treeroot, 'deleted')))
+
+    def test_fuzzy_patch_both(self):
+        treeroot = join(self.tmpdir, 'rootparent')
+        shutil.copytree(join(TESTS, '10fuzzy'), treeroot)
+        pto = patch_ng.fromfile(join(TESTS, '10fuzzy/10fuzzy.patch'))
+        self.assertTrue(pto.apply(root=treeroot, fuzz=True))
+        self.assertFalse(pto.apply(root=treeroot, fuzz=False))
+
+    def test_fuzzy_patch_before(self):
+        treeroot = join(self.tmpdir, 'rootparent')
+        shutil.copytree(join(TESTS, '10fuzzybefore'), treeroot)
+        pto = patch_ng.fromfile(join(TESTS, '10fuzzybefore/10fuzzybefore.patch'))
+        self.assertTrue(pto.apply(root=treeroot, fuzz=True))
+        self.assertFalse(pto.apply(root=treeroot, fuzz=False))
+
+    def test_fuzzy_patch_after(self):
+        treeroot = join(self.tmpdir, 'rootparent')
+        shutil.copytree(join(TESTS, '10fuzzyafter'), treeroot)
+        pto = patch_ng.fromfile(join(TESTS, '10fuzzyafter/10fuzzyafter.patch'))
+        self.assertTrue(pto.apply(root=treeroot, fuzz=True))
+        self.assertFalse(pto.apply(root=treeroot, fuzz=False))
 
 
 class TestHelpers(unittest.TestCase):

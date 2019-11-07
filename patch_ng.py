@@ -31,7 +31,7 @@
 from __future__ import print_function
 
 __author__ = "Conan.io <info@conan.io>"
-__version__ = "1.17.1"
+__version__ = "1.17.2"
 __license__ = "MIT"
 __url__ = "https://github.com/conan-io/python-patch"
 
@@ -82,11 +82,12 @@ def tostr(b):
 # Logging is controlled by logger named after the
 # module name (e.g. 'patch' for patch_ng.py module)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("patch_ng")
 
 debug = logger.debug
 info = logger.info
 warning = logger.warning
+error = logger.error
 
 class NullHandler(logging.Handler):
   """ Copied from Python 2.7 to avoid getting
@@ -304,16 +305,6 @@ class Hunk(object):
     self.invalid=False
     self.desc=''
     self.text=[]
-
-#  def apply(self, estream):
-#    """ write hunk data into enumerable stream
-#        return strings one by one until hunk is
-#        over
-#
-#        enumerable stream are tuples (lineno, line)
-#        where lineno starts with 0
-#    """
-#    pass
 
 
 class Patch(object):
@@ -966,9 +957,12 @@ class PatchSet(object):
 
 
 
-  def apply(self, strip=0, root=None):
+  def apply(self, strip=0, root=None, fuzz=False):
     """ Apply parsed patch, optionally stripping leading components
         from file paths. `root` parameter specifies working dir.
+        :param strip: Strip patch path
+        :param root: Folder to apply the patch
+        :param fuzz: Accept fuzzy patches
         return True on success
     """
     items = []
@@ -1018,11 +1012,11 @@ class PatchSet(object):
       filenameo, filenamen = self.findfiles(old, new)
 
       if not filenameo or not filenamen:
-        warning("source/target file does not exist:\n  --- %s\n  +++ %s" % (old, new))
+        error("source/target file does not exist:\n  --- %s\n  +++ %s" % (old, new))
         errors += 1
         continue
       if not isfile(filenameo):
-        warning("not a file - %s" % filenameo)
+        error("not a file - %s" % filenameo)
         errors += 1
         continue
 
@@ -1049,28 +1043,31 @@ class PatchSet(object):
           # todo \ No newline at end of file
 
         # check hunks in source file
-        if lineno+1 < hunk.startsrc+len(hunkfind)-1:
+        if lineno+1 < hunk.startsrc+len(hunkfind):
           if line.rstrip(b"\r\n") == hunkfind[hunklineno]:
-            hunklineno+=1
+            hunklineno += 1
           else:
-            info("file %d/%d:\t %s" % (i+1, total, filenamen))
-            info(" hunk no.%d doesn't match source file at line %d" % (hunkno+1, lineno+1))
-            info("  expected: %s" % hunkfind[hunklineno])
-            info("  actual  : %s" % line.rstrip(b"\r\n"))
-            # not counting this as error, because file may already be patched.
-            # check if file is already patched is done after the number of
-            # invalid hunks if found
-            # TODO: check hunks against source/target file in one pass
-            #   API - check(stream, srchunks, tgthunks)
-            #           return tuple (srcerrs, tgterrs)
-
-            # continue to check other hunks for completeness
-            hunkno += 1
-            if hunkno < len(p.hunks):
-              hunk = p.hunks[hunkno]
-              continue
+            warning("file %d/%d:\t %s" % (i+1, total, filenamen))
+            warning(" hunk no.%d doesn't match source file at line %d" % (hunkno+1, lineno+1))
+            warning("  expected: %s" % hunkfind[hunklineno])
+            warning("  actual  : %s" % line.rstrip(b"\r\n"))
+            if fuzz:
+              hunklineno += 1
             else:
-              break
+              # not counting this as error, because file may already be patched.
+              # check if file is already patched is done after the number of
+              # invalid hunks if found
+              # TODO: check hunks against source/target file in one pass
+              #   API - check(stream, srchunks, tgthunks)
+              #           return tuple (srcerrs, tgterrs)
+
+              # continue to check other hunks for completeness
+              hunkno += 1
+              if hunkno < len(p.hunks):
+                hunk = p.hunks[hunkno]
+                continue
+              else:
+                break
 
         # check if processed line is the last line
         if len(hunkfind) == 0 or lineno+1 == hunk.startsrc+len(hunkfind)-1:
@@ -1086,7 +1083,7 @@ class PatchSet(object):
               break
       else:
         if hunkno < len(p.hunks):
-          warning("premature end of source file %s at hunk %d" % (filenameo, hunkno+1))
+          error("premature end of source file %s at hunk %d" % (filenameo, hunkno+1))
           errors += 1
 
       f2fp.close()
@@ -1095,8 +1092,11 @@ class PatchSet(object):
         if self._match_file_hunks(filenameo, p.hunks):
           warning("already patched  %s" % filenameo)
         else:
-          warning("source file is different - %s" % filenameo)
-          errors += 1
+          if fuzz:
+            warning("source file is different - %s" % filenameo)
+          else:
+            error("source file is different - %s" % filenameo)
+            errors += 1
       if canpatch:
         backupname = filenamen+b".orig"
         if exists(backupname):
@@ -1247,8 +1247,9 @@ class PatchSet(object):
           continue
         else:
           if not hline.startswith(b"+"):
-            get_line()
+            yield get_line()
             srclineno += 1
+            continue
           line2write = hline[1:]
           # detect if line ends are consistent in source file
           if sum([bool(lineends[x]) for x in lineends]) == 1:
@@ -1310,6 +1311,7 @@ def main():
                                            help="strip N path components from filenames")
   opt.add_option("--revert", action="store_true",
                                            help="apply patch in reverse order (unpatch)")
+  opt.add_option("-f", "--fuzz", action="store_true", dest="fuzz", help="Accept fuuzzy patches")
   (options, args) = opt.parse_args()
 
   if not args and sys.argv[-1:] != ['--']:
@@ -1344,11 +1346,15 @@ def main():
     print(patch.diffstat())
     sys.exit(0)
 
+  if not patch:
+    error("Could not parse patch")
+    sys.exit(-1)
+
   #pprint(patch)
   if options.revert:
     patch.revert(options.strip, root=options.directory) or sys.exit(-1)
   else:
-    patch.apply(options.strip, root=options.directory) or sys.exit(-1)
+    patch.apply(options.strip, root=options.directory, fuzz=options.fuzz) or sys.exit(-1)
 
   # todo: document and test line ends handling logic - patch_ng.py detects proper line-endings
   #       for inserted hunks and issues a warning if patched file has incosistent line ends
