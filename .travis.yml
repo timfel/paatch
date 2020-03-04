@@ -1,20 +1,42 @@
+stages:
+  - test
+  - name: deploy
+    if: tag IS present
+
 language: python
-python:
-  - "2.7"
-  - "3.4"
-  - "3.5"
-  - "3.6"
-  - "3.7"
-  - "3.7-dev"
-  - "3.8-dev"
 
 install:
   - pip install coverage
-  - pip install pypack
-
 script:
-  # run tests with coverage
+  # run tests and report coverage
   - coverage run tests/run_tests.py
-  - coverage report -m
-  # test distribution packaging
-  - python -m pypack patch_ng.py
+  - coverage report -m --omit=tests/run_tests.py
+
+jobs:
+  include:
+    - stage: test
+      python: 2.7
+    - python: 3.4
+    - python: 3.5
+    - python: 3.6
+    - python: 3.7
+    - python: 3.8
+    - stage: deploy
+      install:
+      script:
+        - "PACKAGE_VERSION=$(cat patch_ng.py | grep __version__ | head -1 | awk -F= '{ print $2 }' | sed 's/[ \",]//g')"
+        - echo "Deploying library version '$PACKAGE_VERSION'"
+        - echo "Tagged in repo as '$TRAVIS_TAG'"
+        - |
+          if [ "$PACKAGE_VERSION" != "$TRAVIS_TAG" ]; then
+            echo "Library version and tag name mismatch!"
+            travis_terminate 1
+          fi
+          
+      deploy:
+        provider: pypi
+        user: "__token__"
+        password: "pypi-we-need-a-token"
+        server: https://test.pypi.org/legacy/
+        on:
+          tags: true
