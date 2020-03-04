@@ -36,7 +36,7 @@ jobs:
       deploy:
         provider: pypi
         user: __token__
-        password: ggKIZjlC4xLtBrWSSc+BR1lA5Y2eV8UcKwew+pwRy5j76PMYc7y+daW8HqaErIx2+aNcyY4Sh8cv3nJ2MntH3ZckmChCmDlXc7/q9gwMmX85f0on/i1LDhakxvtiOM5/FqaH06bIaqy6pEAurcjIVRXNJwgfOFQu86AGTAa92NCOkyBT2Sr9fWyEKN+ONalFPHCOmnXnj0AXYceQ5egV1G75LZnO8wzl6+05lUDUCwh1ooQbNo6flliFc5aRMCFESSjBOps08qZEt+/hromlSzYFtqX1gy3myNeGV/df2+nRs+X45YJjScnEXIcPDE9REbw1nY23r7FadCKPJT8CYOCSJ2e5TvGYvhbHSGGXU4hYZSdldGH9Ub+LaQyTXHvsoyWcQzhkdfAhpqJ3AIX1RKqK4C8B3Fr2lkbkEc7YuoSLXxx4Xg2DikyvqMBafUBzAlbtt5qP+nH9j1LOhe2ntXpo7z2y00zKQV6bC7QCyK2X7wItruW4z5kXXOOB6i/WjUa1XdL/3yYm4LJ5tkLKHUTB0tbwCQhWpymr9ZIiKVL/9WtVl/+erJ6YjxIwhRI+INFhyHAJF8mJI9ywF7y5DREIBfR27VkwDgm+Y0lobGyU+/1bWSxoYq7gzkRvoPoUW1xBMZ4koqDTCO5wBVz79EDCfpfm302kYjMW0NA9m5w=
-        server: https://test.pypi.org/legacy/
+        password:
+          secure: ggKIZjlC4xLtBrWSSc+BR1lA5Y2eV8UcKwew+pwRy5j76PMYc7y+daW8HqaErIx2+aNcyY4Sh8cv3nJ2MntH3ZckmChCmDlXc7/q9gwMmX85f0on/i1LDhakxvtiOM5/FqaH06bIaqy6pEAurcjIVRXNJwgfOFQu86AGTAa92NCOkyBT2Sr9fWyEKN+ONalFPHCOmnXnj0AXYceQ5egV1G75LZnO8wzl6+05lUDUCwh1ooQbNo6flliFc5aRMCFESSjBOps08qZEt+/hromlSzYFtqX1gy3myNeGV/df2+nRs+X45YJjScnEXIcPDE9REbw1nY23r7FadCKPJT8CYOCSJ2e5TvGYvhbHSGGXU4hYZSdldGH9Ub+LaQyTXHvsoyWcQzhkdfAhpqJ3AIX1RKqK4C8B3Fr2lkbkEc7YuoSLXxx4Xg2DikyvqMBafUBzAlbtt5qP+nH9j1LOhe2ntXpo7z2y00zKQV6bC7QCyK2X7wItruW4z5kXXOOB6i/WjUa1XdL/3yYm4LJ5tkLKHUTB0tbwCQhWpymr9ZIiKVL/9WtVl/+erJ6YjxIwhRI+INFhyHAJF8mJI9ywF7y5DREIBfR27VkwDgm+Y0lobGyU+/1bWSxoYq7gzkRvoPoUW1xBMZ4koqDTCO5wBVz79EDCfpfm302kYjMW0NA9m5w=
         on:
           tags: true
