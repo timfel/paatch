@@ -179,6 +179,12 @@ def xstrip(filename):
       filename = re.sub(b'^[\\\\/]+', b'', filename)
   return filename
 
+
+def safe_unlink(filepath):
+  os.chmod(filepath, stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+  os.unlink(filepath)
+
+
 #-----------------------------------------------
 # Main API functions
 
@@ -977,7 +983,7 @@ class PatchSet(object):
         save(target, new_file)
       elif "dev/null" in target:
         source = self.strip_path(source, root, strip)
-        os.unlink(source)
+        safe_unlink(source)
       else:
         items.append(item)
     self.items = items
@@ -1107,14 +1113,12 @@ class PatchSet(object):
           shutil.move(filenamen, backupname)
           if self.write_hunks(backupname if filenameo == filenamen else filenameo, filenamen, p.hunks):
             info("successfully patched %d/%d:\t %s" % (i+1, total, filenamen))
-            os.chmod(backupname, stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
-            os.unlink(backupname)
+            safe_unlink(backupname)
             if new == b'/dev/null':
               # check that filename is of size 0 and delete it.
               if os.path.getsize(filenamen) > 0:
                 warning("expected patched file to be empty as it's marked as deletion:\t %s" % filenamen)
-              os.chmod(backupname, stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
-              os.unlink(filenamen)
+              safe_unlink(filenamen)
           else:
             errors += 1
             warning("error patching file %s" % filenamen)
