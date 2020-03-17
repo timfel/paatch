@@ -446,6 +446,12 @@ class TestPatchApply(unittest.TestCase):
         self.assertTrue(pto.apply(root=treeroot, fuzz=True))
         self.assertFalse(pto.apply(root=treeroot, fuzz=False))
 
+    def test_unlink_backup_windows(self):
+        treeroot = join(self.tmpdir, 'rootparent')
+        shutil.copytree(join(TESTS, '11permission'), treeroot)
+        pto = patch_ng.fromfile(join(TESTS, '11permission/11permission.patch'))
+        self.assertTrue(pto.apply(root=treeroot))
+
 
 class TestHelpers(unittest.TestCase):
     # unittest setting
