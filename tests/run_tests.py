@@ -489,7 +489,7 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(patch_ng.pathstrip(b'path/name.diff', 0), b'path/name.diff')
 
 def remove_tree_force(folder):
-    for root, dirs, files in os.walk(folder):
+    for root, _, files in os.walk(folder):
         for it in files:
             chmod(os.path.join(root, it), stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
     shutil.rmtree(folder, ignore_errors=True)
