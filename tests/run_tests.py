@@ -490,11 +490,9 @@ class TestHelpers(unittest.TestCase):
 
 def remove_tree_force(folder):
     for root, dirs, files in os.walk(folder):
-        for it in dirs:
-            chmod(os.path.join(root, it), stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
         for it in files:
             chmod(os.path.join(root, it), stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
-    shutil.rmtree(folder)
+    shutil.rmtree(folder, ignore_errors=True)
 
 # ----------------------------------------------------------------------------
 
