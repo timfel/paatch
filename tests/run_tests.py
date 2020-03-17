@@ -451,7 +451,7 @@ class TestPatchApply(unittest.TestCase):
         treeroot = join(self.tmpdir, 'rootparent')
         shutil.copytree(join(TESTS, '11permission'), treeroot)
         pto = patch_ng.fromfile(join(TESTS, '11permission', '11permission.patch'))
-        some_file = join(TESTS, '11permission', 'some_file')
+        some_file = join(treeroot, 'some_file')
         chmod(some_file, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
         self.assertTrue(pto.apply(root=treeroot))
         self.assertTrue(os.stat(some_file).st_mode, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
