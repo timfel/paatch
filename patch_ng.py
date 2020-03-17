@@ -31,7 +31,7 @@
 from __future__ import print_function
 
 __author__ = "Conan.io <info@conan.io>"
-__version__ = "1.17.3"
+__version__ = "1.17.4"
 __license__ = "MIT"
 __url__ = "https://github.com/conan-io/python-patch"
 
@@ -1107,13 +1107,13 @@ class PatchSet(object):
           shutil.move(filenamen, backupname)
           if self.write_hunks(backupname if filenameo == filenamen else filenameo, filenamen, p.hunks):
             info("successfully patched %d/%d:\t %s" % (i+1, total, filenamen))
-            os.chmod(backupname, stat.S_IWRITE)
+            os.chmod(backupname, stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
             os.unlink(backupname)
             if new == b'/dev/null':
               # check that filename is of size 0 and delete it.
               if os.path.getsize(filenamen) > 0:
                 warning("expected patched file to be empty as it's marked as deletion:\t %s" % filenamen)
-              os.chmod(filenamen, stat.S_IWRITE)
+              os.chmod(backupname, stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
               os.unlink(filenamen)
           else:
             errors += 1
