@@ -1,10 +1,13 @@
-environment:
+build: false
 
-  matrix:
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-      PYTHON: "C:\\Python27"
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-      PYTHON: "C:\\Python38"
+environment:
+    PYTHON_ARCH: "32"
+
+    matrix:
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+          PYTHON: "C:\\Python27"
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+          PYTHON: "C:\\Python38"
 
 test_script:
-  - python.exe tests/run_tests.py
+- python tests/run_tests.py
