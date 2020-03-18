@@ -37,7 +37,8 @@ import re
 import shutil
 import unittest
 import copy
-from os import listdir
+import stat
+from os import listdir, chmod
 from os.path import abspath, dirname, exists, join, isdir, isfile
 from tempfile import mkdtemp
 try:
@@ -171,9 +172,7 @@ class TestPatchFiles(unittest.TestCase):
         self._assert_dirs_equal(join(basepath, "[result]"),
                                 tmpdir,
                                 ignore=["%s.patch" % testname, ".svn", ".gitkeep", "[result]"])
-
-
-      shutil.rmtree(tmpdir)
+      remove_tree_force(tmpdir)
       return 0
 
 
@@ -362,7 +361,7 @@ class TestPatchApply(unittest.TestCase):
 
     def tearDown(self):
         os.chdir(self.save_cwd)
-        shutil.rmtree(self.tmpdir)
+        remove_tree_force(self.tmpdir)
 
     def tmpcopy(self, filenames):
         """copy file(s) from test_dir to self.tmpdir"""
@@ -446,6 +445,17 @@ class TestPatchApply(unittest.TestCase):
         self.assertTrue(pto.apply(root=treeroot, fuzz=True))
         self.assertFalse(pto.apply(root=treeroot, fuzz=False))
 
+    def test_unlink_backup_windows(self):
+        """ Apply patch to a read-only file and don't change its filemode
+        """
+        treeroot = join(self.tmpdir, 'rootparent')
+        shutil.copytree(join(TESTS, '11permission'), treeroot)
+        pto = patch_ng.fromfile(join(TESTS, '11permission', '11permission.patch'))
+        some_file = join(treeroot, 'some_file')
+        chmod(some_file, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+        self.assertTrue(pto.apply(root=treeroot))
+        self.assertTrue(os.stat(some_file).st_mode, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+
 
 class TestHelpers(unittest.TestCase):
     # unittest setting
@@ -477,6 +487,12 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(patch_ng.pathstrip(b'path/to/test/name.diff', 2), b'test/name.diff')
         self.assertEqual(patch_ng.pathstrip(b'path/name.diff', 1), b'name.diff')
         self.assertEqual(patch_ng.pathstrip(b'path/name.diff', 0), b'path/name.diff')
+
+def remove_tree_force(folder):
+    for root, _, files in os.walk(folder):
+        for it in files:
+            chmod(os.path.join(root, it), stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+    shutil.rmtree(folder, ignore_errors=True)
 
 # ----------------------------------------------------------------------------
 
