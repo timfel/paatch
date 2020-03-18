@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/conan-io/python-patch-ng.svg?branch=master)](https://travis-ci.org/conan-io/python-patch-ng)
+[![Build Status Travis CI](https://travis-ci.org/conan-io/python-patch-ng.svg?branch=master)](https://travis-ci.org/conan-io/python-patch-ng)
+[![Build status Appveyor](https://ci.appveyor.com/api/projects/status/i4r6lf62slvx82db?svg=true)](https://ci.appveyor.com/project/ConanCIintegration/python-patch-ng)
 [![PyPI](https://img.shields.io/pypi/v/patch-ng)](https://pypi.python.org/pypi/patch-ng)
 
 ## Patch NG (New Generation)
