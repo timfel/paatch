@@ -1,9 +1,10 @@
 environment:
 
   matrix:
-    - PYTHON: "C:\\Python27"
-    - PYTHON: "C:\\Python35"
-    - PYTHON: "C:\\Python38"
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      PYTHON: "C:\\Python27"
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      PYTHON: "C:\\Python38"
 
 test_script:
   - python.exe tests/run_tests.py
