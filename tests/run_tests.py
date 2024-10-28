@@ -24,10 +24,11 @@ To refresh code coverage stats, get 'coverage' tool from
 http://pypi.python.org/pypi/coverage/ and run this file with:
 
   coverage run run_tests.py
+  coverage combine
   coverage html -d coverage
 
 On Windows it may be more convenient instead of `coverage` call
-`python -m coverage.__main__`
+`python -m coverage`
 """
 from __future__ import print_function
 
@@ -126,6 +127,16 @@ class TestPatchFiles(unittest.TestCase):
 
       tmpdir = mkdtemp(prefix="%s."%testname)
 
+      # Ensure we collect coverage for subprocesses into the parent
+      if 'coverage' in sys.modules.keys():
+        with open(join(tmpdir, ".coveragerc"), "w") as f:
+          f.write("[run]\n")
+          f.write("parallel = true\n")
+          f.write("data_file = " + join(dirname(TESTS), ".coverage") + "\n")
+        exe = [sys.executable, "-m", "coverage", "run"]
+      else:
+        exe = [sys.executable]
+
       basepath = join(TESTS, testname)
       basetmp = join(tmpdir, testname)
 
@@ -154,10 +165,10 @@ class TestPatchFiles(unittest.TestCase):
       os.chdir(tmpdir)
       extra = "-f" if "10fuzzy" in testname else ""
       if verbose:
-        cmd = '%s %s %s "%s"' % (sys.executable, patch_tool, extra, patch_file)
+        cmd = '%s %s %s "%s"' % (" ".join(exe), patch_tool, extra, patch_file)
         print("\n"+cmd)
       else:
-        cmd = '%s %s -q %s "%s"' % (sys.executable, patch_tool, extra, patch_file)
+        cmd = '%s %s -q %s "%s"' % (" ".join(exe), patch_tool, extra, patch_file)
       ret = os.system(cmd)
       assert ret == 0, "Error %d running test %s" % (ret, testname)
       os.chdir(save_cwd)
@@ -171,7 +182,7 @@ class TestPatchFiles(unittest.TestCase):
         # recursive comparison
         self._assert_dirs_equal(join(basepath, "[result]"),
                                 tmpdir,
-                                ignore=["%s.patch" % testname, ".svn", ".gitkeep", "[result]"])
+                                ignore=["%s.patch" % testname, ".svn", ".gitkeep", "[result]", ".coveragerc"])
       remove_tree_force(tmpdir)
       return 0
 
@@ -193,7 +204,9 @@ def add_test_methods(cls):
       methname = 'test_' + filename
       def create_closure():
         name = filename
-        return lambda self: self._run_test(name)
+        def test(self):
+          self._run_test(name)
+        return test
       test = create_closure()
       setattr(cls, methname, test)
       if verbose:
