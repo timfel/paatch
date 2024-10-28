@@ -1340,7 +1340,7 @@ def main():
     setdebug()  # this sets global debugmode variable
 
   if readstdin:
-    patch = PatchSet(sys.stdin)
+    patch = PatchSet(sys.stdin.buffer)
   else:
     patchfile = options.input if options.input else args[0]
     urltest = patchfile.split(':')[0]

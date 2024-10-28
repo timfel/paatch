@@ -39,6 +39,7 @@ import shutil
 import unittest
 import copy
 import stat
+import subprocess
 from os import listdir, chmod
 from os.path import abspath, dirname, exists, join, isdir, isfile
 from tempfile import mkdtemp
@@ -114,7 +115,7 @@ class TestPatchFiles(unittest.TestCase):
         self.fail("extra file or directory: %s" % e2)
 
 
-  def _run_test(self, testname):
+  def _run_test(self, testname, inputarg):
       """
       boilerplate for running *.patch file tests
       """
@@ -164,13 +165,20 @@ class TestPatchFiles(unittest.TestCase):
       save_cwd = getcwdu()
       os.chdir(tmpdir)
       extra = "-f" if "10fuzzy" in testname else ""
-      if verbose:
-        cmd = '%s %s %s "%s"' % (" ".join(exe), patch_tool, extra, patch_file)
-        print("\n"+cmd)
+      if not verbose:
+        extra += " -q "
+      extra += " " + inputarg + " "
+      if "--" in inputarg:
+        cmd = '%s %s %s' % (" ".join(exe), patch_tool, extra)
+        with open(patch_file, "rb") as f:
+          input = f.read()
       else:
-        cmd = '%s %s -q %s "%s"' % (" ".join(exe), patch_tool, extra, patch_file)
-      ret = os.system(cmd)
-      assert ret == 0, "Error %d running test %s" % (ret, testname)
+        cmd = '%s %s %s "%s"' % (" ".join(exe), patch_tool, extra, patch_file)
+        input = None
+      if verbose:
+        print("\n"+cmd)
+      proc = subprocess.run(cmd, shell=True, input=input)
+      assert proc.returncode == 0, "Error %d running test %s" % (proc.returncode, testname)
       os.chdir(save_cwd)
 
 
@@ -200,12 +208,13 @@ def add_test_methods(cls):
     testset = [testptn.match(e).group('name') for e in listdir(TESTS) if testptn.match(e)]
     testset = sorted(set(testset))
 
-    for filename in testset:
+    for idx, filename in enumerate(testset):
       methname = 'test_' + filename
       def create_closure():
         name = filename
+        inputarg = ["", "-i", "--"][idx % 3]
         def test(self):
-          self._run_test(name)
+          self._run_test(name, inputarg)
         return test
       test = create_closure()
       setattr(cls, methname, test)
