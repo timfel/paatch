@@ -793,12 +793,14 @@ class PatchSet(object):
 
   def _normalize_filenames(self):
     """ sanitize filenames, normalizing paths, i.e.:
-        1. strip a/ and b/ prefixes from GIT and HG style patches
-        2. remove all references to parent directories (with warning)
-        3. translate any absolute paths to relative (with warning)
+        1. remove all references to parent directories (with warning)
+        2. translate any absolute paths to relative (with warning)
 
         [x] always use forward slashes to be crossplatform
             (diff/patch were born as a unix utility after all)
+        [x] Do *not* strip a/ and b/ prefixes from GIT and HG style
+            patches, GNU patch would not do so, instead the user
+            *must* account for this in the -p/--strip option
 
         return None
     """
@@ -809,18 +811,6 @@ class PatchSet(object):
         debug("    patch type = %s" % p.type)
         debug("    source = %s" % p.source)
         debug("    target = %s" % p.target)
-      if p.type in (HG, GIT):
-        debug("stripping a/ and b/ prefixes")
-        if p.source != b'/dev/null':
-          if not p.source.startswith(b"a/"):
-            warning("invalid source filename")
-          else:
-            p.source = p.source[2:]
-        if p.target != b'/dev/null':
-          if not p.target.startswith(b"b/"):
-            warning("invalid target filename")
-          else:
-            p.target = p.target[2:]
 
       p.source = xnormpath(p.source)
       p.target = xnormpath(p.target)
