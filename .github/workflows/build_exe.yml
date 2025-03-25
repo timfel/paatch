@@ -1,6 +1,9 @@
 name: Build patch exe for Windows
 
-on: workflow_dispatch
+on:
+  push:
+    tags:        
+      - '*'
 
 jobs:
   windows_exe:
@@ -19,8 +22,30 @@ jobs:
           mode: onefile
           output-dir: build
           output-file: patch.exe
-      - uses: actions/upload-artifact@v4
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: exe
-          path: build/patch.exe
-          include-hidden-files: true
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Automatic build of patch.exe
+          draft: true
+          prerelease: false
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build/patch.exe
+          asset_name: patch.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
+      - name: Publish release
+        uses: StuYarrow/publish-release@v1.1.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          id: ${{ steps.create_release.outputs.id }}
