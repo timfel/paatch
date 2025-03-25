@@ -109,20 +109,18 @@ logger.addHandler(NullHandler())
 
 debugmode = False
 
+
 def setdebug():
-  global debugmode, streamhandler
-
+  global debugmode
   debugmode = True
-  loglevel = logging.DEBUG
-  logformat = "%(levelname)8s %(message)s"
-  logger.setLevel(loglevel)
+  logger.setLevel(logging.DEBUG)
+  streamhandler.setFormatter(logging.Formatter("%(levelname)8s %(message)s"))
 
-  if streamhandler not in logger.handlers:
-    # when used as a library, streamhandler is not added
-    # by default
-    logger.addHandler(streamhandler)
 
-  streamhandler.setFormatter(logging.Formatter(logformat))
+if streamhandler not in logger.handlers:
+  # when used as a library, streamhandler is not added
+  # by default
+  logger.addHandler(streamhandler)
 
 
 #------------------------------------------------
