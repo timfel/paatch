@@ -1031,9 +1031,13 @@ class PatchSet(object):
       validhunks = 0
       canpatch = False
       for lineno, line in enumerate(f2fp):
-        if lineno+1 < hunk.startsrc:
+        last_line = f2fp.peek(1) == b''
+        if lineno + 1 < hunk.startsrc and not last_line:
           continue
-        elif lineno+1 == hunk.startsrc:
+        elif lineno + 1 == hunk.startsrc or last_line:
+          # If the patch just appends without context, be gracious
+          if lineno + 1 != hunk.startsrc:
+            lineno = hunk.startsrc - 1
           hunkfind = [x[1:].rstrip(b"\r\n") for x in hunk.text if x[0] in b" -"]
           hunkreplace = [x[1:].rstrip(b"\r\n") for x in hunk.text if x[0] in b" +"]
           #pprint(hunkreplace)
