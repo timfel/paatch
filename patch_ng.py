@@ -971,9 +971,11 @@ class PatchSet(object):
         hunks = [s.decode("utf-8") for s in item.hunks[0].text]
         new_file = "".join(hunk[1:] for hunk in hunks)
         save(target, new_file)
+        info(f"successfully created {target}")
       elif "dev/null" in target:
         source = self.strip_path(source, root, strip)
         safe_unlink(source)
+        info(f"successfully deleted {target}")
       else:
         items.append(item)
     self.items = items
