@@ -1333,6 +1333,8 @@ def main():
     patch = PatchSet(sys.stdin.buffer)
   else:
     patchfile = options.input if options.input else args[0]
+    if options.directory and not os.path.isabs(patchfile):
+      patchfile = os.path.join(options.directory, patchfile)
     urltest = patchfile.split(':')[0]
     if (':' in patchfile and urltest.isalpha()
         and len(urltest) > 1): # one char before : is a windows drive letter
