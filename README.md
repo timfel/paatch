@@ -1,66 +1,50 @@
-[![CI Status](https://github.com/conan-io/python-patch-ng/actions/workflows/workflow.yml/badge.svg)](https://github.com/conan-io/python-patch-ng/actions/workflows/workflow.yml)
-[![PyPI](https://img.shields.io/pypi/v/patch-ng)](https://pypi.python.org/pypi/patch-ng)
+[![CI Status](https://github.com/timfel/paatch/actions/workflows/workflow.yml/badge.svg)](https://github.com/timfel/paatch/actions/workflows/workflow.yml)
+[![PyPI](https://img.shields.io/pypi/v/paatch)](https://pypi.python.org/pypi/paatch)
 
-## Patch NG (New Generation)
+## Paatch - parse and apply unified diffs
 
-#### Library to parse and apply unified diffs.
+### Installation and Usage
 
-#### Why did we fork this project?
+    pip install paatch
+    patch -h
 
-This project is a fork from the original [python-patch](https://github.com/techtonik/python-patch) project.
+### Why did I fork?
 
-As any other project, bugs are common during the development process, the combination of issues + pull requests are
-able to keep the constant improvement of a project. However, both community and author need to be aligned. When users,
-developers, the community, needs a fix which are important for their projects, but there is no answer from the author,
-or the time for response is not enough, then the most plausible way is forking and continuing a parallel development.
+This project is a fork of [python-patch-ng](https://github.com/conan-io/python-patch-ng), which itself is a fork of the original [python-patch](https://github.com/techtonik/python-patch) project.
 
-That's way we forked the original and accepted most of PRs waiting for review since jun/2019 (5 months from now).
+I needed a tool to apply unified patches with some GNU extensions, ideally in pure Python.
+The set of patches I'm interested are the [GraalPy patches](https://github.com/oracle/graalpython/tree/master/graalpython/lib-graalpython/patches).
+They apply fine with GNU patch, but the BSD patch utility in macOS chokes on some and getting GNU patch to work on Windows was a bit of hit and miss.
+This is also why originally the `python-patch` project was born in the first place:
 
-### Features
+> In 2008 there was no reliable Windows tool to apply patches,
+> and there was no cross-platform solution that could be safely
+> run by web server process.
+> 
+> (UNIX *patch* utility)[http://www.gnu.org/software/patch/] was
+> (ported to windows)[http://gnuwin32.sourceforge.net/packages/patch.htm],
+> but there were (a couple of bugs)
+> [http://www.google.com/search?q=Assertion+failed%3A+hunk%2C+file+patch.c]
+> that proved that it can not be run securely in web server process.
+> The utility was also hard to tweak without a C compiler, it messed
+> badly with LF and CRLF line end differences, and so this project
+> was born.
+> 
+> *patch.py* was meant to be a cross-platoform tool with intuitive
+> defaults, taking care of the most problems (e.g. line end
+> differences) automatically.
 
- * Python >=3.6 compatible
- * Automatic correction of
-   * Linefeeds according to patched file
-   * Diffs broken by stripping trailing whitespace
-   * a/ and b/ prefixes
- * Single file, which is a command line tool and a library
- * No dependencies outside Python stdlib
- * Patch format detection (SVN, HG, GIT)
- * Nice diffstat histogram
- * Linux / Windows / OS X
- * Test coverage
+So I added what I needed, and now have a PyPI package I can use to apply GraalPy patches on each of these platforms and they will be applied in the same manner.
 
-Things that don't work out of the box:
+### Credits
 
- * File renaming, creation and removal
- * Directory tree operations
- * Version control specific properties
- * Non-unified diff formats
+Reproducing the thanks in the original project:
 
+Alex Stewart
+Wladimir J. van der Laan (laanwj)
+azasypkin
+Philippe Ombredanne
+mspncp
+Yen Chi Hsuan (@yan12125)
 
-### Usage
-
-Download **patch_ng.py** and run it with Python. It is a self-contained
-module without external dependencies.
-
-    patch_ng.py diff.patch
-
-You can also run the .zip file.
-
-    python patch-ng-1.17.zip diff.patch
-
-### Installation
-
-**patch_ng.py** is self sufficient. You can copy it into your repository
-and use it from here. This setup will always be repeatable. But if
-you need to add `patch` module as a dependency, make sure to use strict
-specifiers to avoid hitting an API break when version 2 is released:
-
-    pip install "patch-ng"
-
-
-### Other stuff
-
-* [CHANGES](doc/CHANGES.md)
-* [LICENSE: MIT](LICENSE)
-* [CREDITS](doc/CREDITS)
+* [LICENSE: UPL](LICENSE)

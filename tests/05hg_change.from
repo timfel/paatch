@@ -41,10 +41,10 @@ if "-v" in sys.argv or "--verbose" in sys.argv:
 tests_dir = dirname(abspath(__file__))
 
 
-# import patch_ng.py from parent directory
+# import paatch.py from parent directory
 save_path = sys.path
 sys.path.insert(0, dirname(tests_dir))
-import patch_ng
+import paatch
 sys.path = save_path
 
 
@@ -129,7 +129,7 @@ class TestPatchFiles(unittest.TestCase):
 
       # 3.
       # test utility as a whole
-      patch_tool = join(dirname(tests_dir), "patch_ng.py")
+      patch_tool = join(dirname(tests_dir), "paatch.py")
       save_cwd = os.getcwdu()
       os.chdir(tmpdir)
       if verbose:

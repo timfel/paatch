@@ -18,7 +18,7 @@ jobs:
       - uses: Nuitka/Nuitka-Action@main
         with:
           nuitka-version: main
-          script-name: patch_ng.py
+          script-name: paatch.py
           mode: onefile
           output-dir: build
           output-file: patch.exe

@@ -60,10 +60,10 @@ def testfile(name):
   return join(TESTDATA, name)
 
 
-# import patch_ng.py from parent directory
+# import paatch.py from parent directory
 save_path = sys.path
 sys.path.insert(0, dirname(TESTS))
-import patch_ng
+import paatch
 sys.path = save_path
 
 
@@ -161,7 +161,7 @@ class TestPatchFiles(unittest.TestCase):
 
       # 3.
       # test utility as a whole
-      patch_tool = join(dirname(TESTS), "patch_ng.py")
+      patch_tool = join(dirname(TESTS), "paatch.py")
       save_cwd = getcwdu()
       os.chdir(tmpdir)
       extra = "-f" if "10fuzzy" in testname else ""
@@ -233,31 +233,31 @@ class TestCheckPatched(unittest.TestCase):
         os.chdir(self.save_cwd)
 
     def test_patched_multipatch(self):
-        pto = patch_ng.fromfile("01uni_multi/01uni_multi.patch")
+        pto = paatch.fromfile("01uni_multi/01uni_multi.patch")
         os.chdir(join(TESTS, "01uni_multi", "[result]"))
         self.assertTrue(pto.can_patch(b"updatedlg.cpp"))
 
     def test_can_patch_single_source(self):
-        pto2 = patch_ng.fromfile("02uni_newline.patch")
+        pto2 = paatch.fromfile("02uni_newline.patch")
         self.assertTrue(pto2.can_patch(b"02uni_newline.from"))
 
     def test_can_patch_fails_on_target_file(self):
-        pto3 = patch_ng.fromfile("03trail_fname.patch")
+        pto3 = paatch.fromfile("03trail_fname.patch")
         self.assertEqual(None, pto3.can_patch(b"03trail_fname.to"))
         self.assertEqual(None, pto3.can_patch(b"not_in_source.also"))
 
     def test_multiline_false_on_other_file(self):
-        pto = patch_ng.fromfile("01uni_multi/01uni_multi.patch")
+        pto = paatch.fromfile("01uni_multi/01uni_multi.patch")
         os.chdir(join(TESTS, "01uni_multi"))
         self.assertFalse(pto.can_patch(b"updatedlg.cpp"))
 
     def test_single_false_on_other_file(self):
-        pto3 = patch_ng.fromfile("03trail_fname.patch")
+        pto3 = paatch.fromfile("03trail_fname.patch")
         self.assertFalse(pto3.can_patch("03trail_fname.from"))
 
     def test_can_patch_checks_source_filename_even_if_target_can_be_patched(self):
-        pto2 = patch_ng.fromfile("04can_patch.patch")
-        self.assertFalse(pto2.can_patch("04can_patch_ng.to"))
+        pto2 = paatch.fromfile("04can_patch.patch")
+        self.assertFalse(pto2.can_patch("04can_paatch.to"))
 
 # ----------------------------------------------------------------------------
 
@@ -268,31 +268,31 @@ class TestPatchParse(unittest.TestCase):
           readstr = f.read()
         finally:
           f.close()
-        pst = patch_ng.fromstring(readstr)
+        pst = paatch.fromstring(readstr)
         self.assertEqual(len(pst), 5)
 
     def test_fromfile(self):
-        pst = patch_ng.fromfile(join(TESTS, "01uni_multi/01uni_multi.patch"))
+        pst = paatch.fromfile(join(TESTS, "01uni_multi/01uni_multi.patch"))
         self.assertNotEqual(pst, False)
         self.assertEqual(len(pst), 5)
-        ps2 = patch_ng.fromfile(testfile("failing/not-a-patch.log"))
+        ps2 = paatch.fromfile(testfile("failing/not-a-patch.log"))
         self.assertFalse(ps2)
 
     def test_no_header_for_plain_diff_with_single_file(self):
-        pto = patch_ng.fromfile(join(TESTS, "03trail_fname.patch"))
+        pto = paatch.fromfile(join(TESTS, "03trail_fname.patch"))
         self.assertEqual(pto.items[0].header, [])
 
     def test_header_for_second_file_in_svn_diff(self):
-        pto = patch_ng.fromfile(join(TESTS, "01uni_multi/01uni_multi.patch"))
+        pto = paatch.fromfile(join(TESTS, "01uni_multi/01uni_multi.patch"))
         self.assertEqual(pto.items[1].header[0], b'Index: updatedlg.h\r\n')
         self.assertTrue(pto.items[1].header[1].startswith(b'====='))
 
     def test_hunk_desc(self):
-        pto = patch_ng.fromfile(testfile('git-changed-file.diff'))
+        pto = paatch.fromfile(testfile('git-changed-file.diff'))
         self.assertEqual(pto.items[0].hunks[0].desc, b'class JSONPluginMgr(object):')
 
     def test_autofixed_absolute_path(self):
-        pto = patch_ng.fromfile(join(TESTS, "data/autofix/absolute-path.diff"))
+        pto = paatch.fromfile(join(TESTS, "data/autofix/absolute-path.diff"))
         self.assertEqual(pto.errors, 0)
         self.assertEqual(pto.warnings, 9)
         self.assertEqual(pto.items[0].source, b"winnt/tests/run_tests.py")
@@ -301,31 +301,31 @@ class TestPatchParse(unittest.TestCase):
         # [ ] exception vs return codes for error recovery
         #  [x] separate return code when patch lib compensated the error
         #      (implemented as warning count)
-        pto = patch_ng.fromfile(join(TESTS, "data/autofix/parent-path.diff"))
+        pto = paatch.fromfile(join(TESTS, "data/autofix/parent-path.diff"))
         self.assertEqual(pto.errors, 0)
         self.assertEqual(pto.warnings, 4)
-        self.assertEqual(pto.items[0].source, b"patch_ng.py")
+        self.assertEqual(pto.items[0].source, b"paatch.py")
 
     def test_autofixed_stripped_trailing_whitespace(self):
-        pto = patch_ng.fromfile(join(TESTS, "data/autofix/stripped-trailing-whitespace.diff"))
+        pto = paatch.fromfile(join(TESTS, "data/autofix/stripped-trailing-whitespace.diff"))
         self.assertEqual(pto.errors, 0)
         self.assertEqual(pto.warnings, 4)
 
     def test_fail_missing_hunk_line(self):
         fp = open(join(TESTS, "data/failing/missing-hunk-line.diff"), 'rb')
-        pto = patch_ng.PatchSet()
+        pto = paatch.PatchSet()
         self.assertNotEqual(pto.parse(fp), True)
         fp.close()
 
     def test_fail_context_format(self):
         fp = open(join(TESTS, "data/failing/context-format.diff"), 'rb')
-        res = patch_ng.PatchSet().parse(fp)
+        res = paatch.PatchSet().parse(fp)
         self.assertFalse(res)
         fp.close()
 
     def test_fail_not_a_patch(self):
         fp = open(join(TESTS, "data/failing/not-a-patch.log"), 'rb')
-        res = patch_ng.PatchSet().parse(fp)
+        res = paatch.PatchSet().parse(fp)
         self.assertFalse(res)
         fp.close()
 
@@ -337,14 +337,14 @@ class TestPatchParse(unittest.TestCase):
  conf.cpp      | 23 +++++++++++++++++------
  conf.h        |  7 ++++---
  5 files changed, 48 insertions(+), 18 deletions(-), +1203 bytes"""
-        pto = patch_ng.fromfile(join(TESTS, "01uni_multi/01uni_multi.patch"))
+        pto = paatch.fromfile(join(TESTS, "01uni_multi/01uni_multi.patch"))
         self.assertEqual(pto.diffstat(), output, "Output doesn't match")
 
 
 class TestPatchSetDetection(unittest.TestCase):
     def test_svn_detected(self):
-        pto = patch_ng.fromfile(join(TESTS, "01uni_multi/01uni_multi.patch"))
-        self.assertEqual(pto.type, patch_ng.SVN)
+        pto = paatch.fromfile(join(TESTS, "01uni_multi/01uni_multi.patch"))
+        self.assertEqual(pto.type, paatch.SVN)
 
 # generate tests methods for TestPatchSetDetection - one for each patch file
 def generate_detection_test(filename, patchtype):
@@ -352,7 +352,7 @@ def generate_detection_test(filename, patchtype):
   # from fetching it from global
   patchtype = difftype
   def test(self):
-    pto = patch_ng.fromfile(join(TESTDATA, filename))
+    pto = paatch.fromfile(join(TESTDATA, filename))
     self.assertEqual(pto.type, patchtype)
   return test
 
@@ -360,13 +360,13 @@ for filename in os.listdir(TESTDATA):
   if isdir(join(TESTDATA, filename)):
     continue
 
-  difftype = patch_ng.PLAIN
+  difftype = paatch.PLAIN
   if filename.startswith('git-'):
-    difftype = patch_ng.GIT
+    difftype = paatch.GIT
   if filename.startswith('hg-'):
-    difftype = patch_ng.HG
+    difftype = paatch.HG
   if filename.startswith('svn-'):
-    difftype = patch_ng.SVN
+    difftype = paatch.SVN
 
   name = 'test_'+filename
   test = generate_detection_test(filename, difftype)
@@ -393,13 +393,13 @@ class TestPatchApply(unittest.TestCase):
     def test_apply_returns_false_on_failure(self):
         self.tmpcopy(['data/failing/non-empty-patch-for-empty-file.diff',
                       'data/failing/upload.py'])
-        pto = patch_ng.fromfile('non-empty-patch-for-empty-file.diff')
+        pto = paatch.fromfile('non-empty-patch-for-empty-file.diff')
         self.assertFalse(pto.apply())
 
     def test_apply_returns_true_on_success(self):
         self.tmpcopy(['03trail_fname.patch',
                       '03trail_fname.from'])
-        pto = patch_ng.fromfile('03trail_fname.patch')
+        pto = paatch.fromfile('03trail_fname.patch')
         self.assertTrue(pto.apply())
 
     def test_revert(self):
@@ -409,7 +409,7 @@ class TestPatchApply(unittest.TestCase):
 
         self.tmpcopy(['03trail_fname.patch',
                       '03trail_fname.from'])
-        pto = patch_ng.fromfile('03trail_fname.patch')
+        pto = paatch.fromfile('03trail_fname.patch')
         self.assertTrue(pto.apply())
         self.assertNotEqual(get_file_content(self.tmpdir + '/03trail_fname.from'),
                             get_file_content(TESTS + '/03trail_fname.from'))
@@ -420,13 +420,13 @@ class TestPatchApply(unittest.TestCase):
     def test_apply_root(self):
         treeroot = join(self.tmpdir, 'rootparent')
         shutil.copytree(join(TESTS, '06nested'), treeroot)
-        pto = patch_ng.fromfile(join(TESTS, '06nested/06nested.patch'))
+        pto = paatch.fromfile(join(TESTS, '06nested/06nested.patch'))
         self.assertTrue(pto.apply(root=treeroot))
 
     def test_apply_strip(self):
         treeroot = join(self.tmpdir, 'rootparent')
         shutil.copytree(join(TESTS, '06nested'), treeroot)
-        pto = patch_ng.fromfile(join(TESTS, '06nested/06nested.patch'))
+        pto = paatch.fromfile(join(TESTS, '06nested/06nested.patch'))
         for p in pto:
           p.source = b'nasty/prefix/' + p.source
           p.target = b'nasty/prefix/' + p.target
@@ -435,35 +435,35 @@ class TestPatchApply(unittest.TestCase):
     def test_create_file(self):
         treeroot = join(self.tmpdir, 'rootparent')
         os.makedirs(treeroot)
-        pto = patch_ng.fromfile(join(TESTS, '08create/08create.patch'))
+        pto = paatch.fromfile(join(TESTS, '08create/08create.patch'))
         pto.apply(strip=0, root=treeroot)
         self.assertTrue(os.path.exists(os.path.join(treeroot, 'created')))
 
     def test_delete_file(self):
         treeroot = join(self.tmpdir, 'rootparent')
         shutil.copytree(join(TESTS, '09delete'), treeroot)
-        pto = patch_ng.fromfile(join(TESTS, '09delete/09delete.patch'))
+        pto = paatch.fromfile(join(TESTS, '09delete/09delete.patch'))
         pto.apply(strip=0, root=treeroot)
         self.assertFalse(os.path.exists(os.path.join(treeroot, 'deleted')))
 
     def test_fuzzy_patch_both(self):
         treeroot = join(self.tmpdir, 'rootparent')
         shutil.copytree(join(TESTS, '10fuzzy'), treeroot)
-        pto = patch_ng.fromfile(join(TESTS, '10fuzzy/10fuzzy.patch'))
+        pto = paatch.fromfile(join(TESTS, '10fuzzy/10fuzzy.patch'))
         self.assertTrue(pto.apply(root=treeroot, fuzz=True))
         self.assertFalse(pto.apply(root=treeroot, fuzz=False))
 
     def test_fuzzy_patch_before(self):
         treeroot = join(self.tmpdir, 'rootparent')
         shutil.copytree(join(TESTS, '10fuzzybefore'), treeroot)
-        pto = patch_ng.fromfile(join(TESTS, '10fuzzybefore/10fuzzybefore.patch'))
+        pto = paatch.fromfile(join(TESTS, '10fuzzybefore/10fuzzybefore.patch'))
         self.assertTrue(pto.apply(root=treeroot, fuzz=True))
         self.assertFalse(pto.apply(root=treeroot, fuzz=False))
 
     def test_fuzzy_patch_after(self):
         treeroot = join(self.tmpdir, 'rootparent')
         shutil.copytree(join(TESTS, '10fuzzyafter'), treeroot)
-        pto = patch_ng.fromfile(join(TESTS, '10fuzzyafter/10fuzzyafter.patch'))
+        pto = paatch.fromfile(join(TESTS, '10fuzzyafter/10fuzzyafter.patch'))
         self.assertTrue(pto.apply(root=treeroot, fuzz=True))
         self.assertFalse(pto.apply(root=treeroot, fuzz=False))
 
@@ -472,7 +472,7 @@ class TestPatchApply(unittest.TestCase):
         """
         treeroot = join(self.tmpdir, 'rootparent')
         shutil.copytree(join(TESTS, '11permission'), treeroot)
-        pto = patch_ng.fromfile(join(TESTS, '11permission', '11permission.patch'))
+        pto = paatch.fromfile(join(TESTS, '11permission', '11permission.patch'))
         some_file = join(treeroot, 'some_file')
         chmod(some_file, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
         self.assertTrue(pto.apply(root=treeroot))
@@ -488,27 +488,27 @@ class TestHelpers(unittest.TestCase):
 
     def test_xisabs(self):
         for path in self.absolute:
-            self.assertTrue(patch_ng.xisabs(path), 'Target path: ' + repr(path))
+            self.assertTrue(paatch.xisabs(path), 'Target path: ' + repr(path))
         for path in self.relative:
-            self.assertFalse(patch_ng.xisabs(path), 'Target path: ' + repr(path))
+            self.assertFalse(paatch.xisabs(path), 'Target path: ' + repr(path))
 
     def test_xnormpath(self):
         path = b"../something/..\\..\\file.to.patch"
-        self.assertEqual(patch_ng.xnormpath(path), b'../../file.to.patch')
+        self.assertEqual(paatch.xnormpath(path), b'../../file.to.patch')
 
     def test_xstrip(self):
         for path in self.absolute[:4]:
-            self.assertEqual(patch_ng.xstrip(path), b'')
+            self.assertEqual(paatch.xstrip(path), b'')
         for path in self.absolute[4:6]:
-            self.assertEqual(patch_ng.xstrip(path), b'path')
+            self.assertEqual(paatch.xstrip(path), b'path')
         # test relative paths are not affected
         for path in self.relative:
-            self.assertEqual(patch_ng.xstrip(path), path)
+            self.assertEqual(paatch.xstrip(path), path)
 
     def test_pathstrip(self):
-        self.assertEqual(patch_ng.pathstrip(b'path/to/test/name.diff', 2), b'test/name.diff')
-        self.assertEqual(patch_ng.pathstrip(b'path/name.diff', 1), b'name.diff')
-        self.assertEqual(patch_ng.pathstrip(b'path/name.diff', 0), b'path/name.diff')
+        self.assertEqual(paatch.pathstrip(b'path/to/test/name.diff', 2), b'test/name.diff')
+        self.assertEqual(paatch.pathstrip(b'path/name.diff', 1), b'name.diff')
+        self.assertEqual(paatch.pathstrip(b'path/name.diff', 0), b'path/name.diff')
 
 def remove_tree_force(folder):
     for root, _, files in os.walk(folder):

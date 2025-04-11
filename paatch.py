@@ -71,10 +71,10 @@
 """
 from __future__ import print_function
 
-__author__ = "Conan.io <info@conan.io>"
-__version__ = "1.19.0"
-__license__ = "MIT"
-__url__ = "https://github.com/conan-io/python-patch"
+__author__ = "Tim Felgentreff <timfelgentreff@gmail.com>"
+__version__ = "1.20.0"
+__license__ = "UPL"
+__url__ = "https://github.com/timfel/paatch"
 
 import copy
 import logging
@@ -122,9 +122,9 @@ def tostr(b):
 
 #------------------------------------------------
 # Logging is controlled by logger named after the
-# module name (e.g. 'patch' for patch_ng.py module)
+# module name (e.g. 'patch' for paatch.py module)
 
-logger = logging.getLogger("patch_ng")
+logger = logging.getLogger("paatch")
 
 debug = logger.debug
 info = logger.info
@@ -1342,7 +1342,7 @@ def main():
                     "       2. %prog [options] http://host/patch\n"
                     "       3. %prog [options] -- < unified.diff"
                     "       4. %prog [options] -i unified.diff",
-                     version="python-patch %s" % __version__)
+                     version="paatch %s" % __version__)
   opt.add_option("-q", "--quiet", action="store_const", dest="verbosity",
                                   const=0, help="print only warnings and errors", default=1)
   opt.add_option("-v", "--verbose", action="store_const", dest="verbosity",
@@ -1405,7 +1405,7 @@ def main():
   else:
     patch.apply(options.strip, root=options.directory, fuzz=options.fuzz) or sys.exit(-1)
 
-  # todo: document and test line ends handling logic - patch_ng.py detects proper line-endings
+  # todo: document and test line ends handling logic - paatch.py detects proper line-endings
   #       for inserted hunks and issues a warning if patched file has incosistent line ends
 
 

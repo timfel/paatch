@@ -31,15 +31,15 @@ def get_requires(filename):
 def load_version():
     """Loads a file content"""
     filename = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                            "patch_ng.py"))
+                                            "paatch.py"))
     with open(filename, "rt") as version_file:
         content = version_file.read()
         version = re.search('__version__ = "([0-9a-z.-]+)"', content).group(1)
         return version
 
 setup(
-    name='patch-ng',
-    python_requires='>=3.6',
+    name='paatch',
+    python_requires='>=3.9',
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
@@ -58,25 +58,27 @@ setup(
     description='Library to parse and apply unified diffs.',
 
     # The project's main homepage.
-    url='https://github.com/conan-io/python-patch',
+    url='https://github.com/timfel/paatch',
 
     # Author details
-    author='Conan.io',
-    author_email='info@conan.io',
+    author='Tim Felgentreff',
+    author_email='timfelgentreff@gmail.com',
 
     # Choose your license
-    license='MIT',
+    license='UPL',
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: UPL License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8'
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13'
     ],
 
     # What does your project relate to?
@@ -88,7 +90,7 @@ setup(
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
-    py_modules=["patch_ng"],
+    py_modules=["paatch"],
 
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
@@ -108,7 +110,7 @@ setup(
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
     package_data={
-        '': ['*.md', 'LICENSE'],
+        '': ['README.md', 'LICENSE'],
     },
 
     # Although 'package_data' is the preferred approach, in some case you may
@@ -122,7 +124,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
        'console_scripts': [
-           'patch = patch_ng:main',
+           'patch = paatch:main',
        ],
     },
 )

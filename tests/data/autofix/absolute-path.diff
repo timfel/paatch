@@ -15,10 +15,10 @@ Index: c:/winnt/tests/run_tests.py
  class TestPatchApply(unittest.TestCase):
      def setUp(self):
          self.save_cwd = os.getcwdu()
-Index: c:/winnt/patch_ng.py
+Index: c:/winnt/paatch.py
 ===================================================================
---- c:/winnt/patch_ng.py	(revision 132)
-+++ c:/winnt/patch_ng.py	(working copy)
+--- c:/winnt/paatch.py	(revision 132)
++++ c:/winnt/paatch.py	(working copy)
 @@ -22,7 +22,7 @@
  from StringIO import StringIO
  import urllib2
