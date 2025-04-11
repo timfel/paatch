@@ -100,21 +100,10 @@ import sys
 import stat
 
 
-PY3K = sys.version_info >= (3, 0)
-
-# PEP 3114
-if not PY3K:
-  compat_next = lambda gen: gen.next()
-else:
-  compat_next = lambda gen: gen.__next__()
-
 def tostr(b):
   """ Python 3 bytes encoder. Used to print filename in
       diffstat output. Assumes that filenames are in utf-8.
   """
-  if not PY3K:
-    return b
-
   # [ ] figure out how to print non-utf-8 filenames without
   #     information loss
   return b.decode('utf-8')
@@ -301,11 +290,8 @@ def decode_text(text):
 
 
 def to_file_bytes(content):
-  if PY3K:
-    if not isinstance(content, bytes):
-      content = bytes(content, "utf-8")
-  elif isinstance(content, unicode):
-    content = content.encode("utf-8")
+  if not isinstance(content, bytes):
+    content = bytes(content, "utf-8")
   return content
 
 
@@ -316,7 +302,7 @@ def load(path, binary=False):
     return tmp if binary else decode_text(tmp)
 
 
-def save(path, content, only_if_modified=False):
+def save(path, content, only_if_modified=True):
   """
   Saves a file with given content
   Params:
@@ -433,7 +419,7 @@ class PatchSet(object):
           return False
 
         try:
-          self._lineno, self._line = compat_next(super(wrapumerate, self))
+          self._lineno, self._line = super(wrapumerate, self).__next__()
         except StopIteration:
           self._exhausted = True
           self._line = False
