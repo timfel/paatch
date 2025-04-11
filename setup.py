@@ -54,8 +54,10 @@ setup(
     # This field corresponds to the "Description" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#description-optional
     long_description=long_description, # Optional
+    long_description_content_type="text/markdown",
 
     description='Library to parse and apply unified diffs.',
+
 
     # The project's main homepage.
     url='https://github.com/timfel/paatch',
@@ -72,7 +74,6 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
-        'License :: OSI Approved :: UPL License',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
