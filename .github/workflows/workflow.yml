@@ -19,38 +19,17 @@ on:
 
 
 jobs:
-  linux-validate:
-    name: Validate on Linux - Python ${{ matrix.python }}
-    runs-on: ubuntu-20.04
+  validate:
     strategy:
       matrix:
-        python: [ '3.6', '3.8', '3.12' ]
+        python: [ '3.11', '3.12' ]
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
           architecture: x64
-
-      - name: Run tests
-        run: python tests/run_tests.py
-
-  windows-validate:
-    name: Validate on Windows - Python ${{ matrix.python }}
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        python: [ '3.6', '3.8', '3.12' ]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-          architecture: x64
-
       - name: Run tests
         run: python tests/run_tests.py
