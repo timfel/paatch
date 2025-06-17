@@ -72,7 +72,7 @@
 from __future__ import print_function
 
 __author__ = "Tim Felgentreff <timfelgentreff@gmail.com>"
-__version__ = "1.20.1"
+__version__ = "1.20.2"
 __license__ = "UPL"
 __url__ = "https://github.com/timfel/paatch"
 
