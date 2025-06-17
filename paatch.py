@@ -1050,21 +1050,25 @@ class PatchSet(object):
       debug("processing %d/%d:\t %s" % (i+1, total, filenamen))
 
       # validate before patching
-      f2fp = open(filenameo, 'rb')
+      with open(filenameo, 'rb') as f2fp:
+        file_lines = f2fp.readlines()
       hunkno = 0
       hunk = p.hunks[hunkno]
       hunkfind = []
       hunkreplace = []
       validhunks = 0
       canpatch = False
-      for lineno, line in enumerate(f2fp):
-        last_line = f2fp.peek(1) == b''
-        if lineno + 1 < hunk.startsrc and not last_line:
+      lineno = 0
+      while lineno < len(file_lines):
+        line = file_lines[lineno]
+        lineno += 1
+        last_line = (lineno == len(file_lines))
+        if lineno < hunk.startsrc and not last_line:
           continue
-        elif lineno + 1 == hunk.startsrc or (last_line and lineno + 1 < hunk.startsrc):
+        elif lineno == hunk.startsrc or (last_line and lineno < hunk.startsrc):
           # If the patch just appends without context, be gracious
-          if last_line and lineno + 1 < hunk.startsrc:
-            lineno = hunk.startsrc - 1
+          if last_line and lineno < hunk.startsrc:
+            lineno = hunk.startsrc
           hunkfind = [x[1:].rstrip(b"\r\n") for x in hunk.text if x[0] in b" -"]
           hunkreplace = [x[1:].rstrip(b"\r\n") for x in hunk.text if x[0] in b" +"]
           #pprint(hunkreplace)
@@ -1073,12 +1077,26 @@ class PatchSet(object):
           # todo \ No newline at end of file
 
         # check hunks in source file
-        if lineno+1 < hunk.startsrc+len(hunkfind):
+        if lineno < hunk.startsrc + len(hunkfind):
           if line.rstrip(b"\r\n") == hunkfind[hunklineno]:
             hunklineno += 1
           else:
+            # search everywhere for another match first without fuzz
+            if hunk.startsrc < len(file_lines):
+              if not getattr(hunk, "original_startsrc", None):
+                hunk.original_startsrc = hunk.startsrc
+                # start at the end of the previous hunk and scan the entire file
+                hunk.startsrc = 1 if hunkno == 0 else p.hunks[hunkno - 1].startsrc + len(p.hunks[hunkno - 1].text)
+              else:
+                hunk.startsrc += 1
+              lineno = hunk.startsrc - 1
+              continue
+            else:
+              # Reset to original startsrc, we could not find a place to apply the patch
+              hunk.startsrc = getattr(hunk, "original_startsrc", hunk.startsrc)
+
             warning("file %d/%d:\t %s" % (i+1, total, filenamen))
-            warning(" hunk no.%d doesn't match source file at line %d" % (hunkno+1, lineno+1))
+            warning(" hunk no.%d doesn't match source file at line %d" % (hunkno+1, lineno))
             warning("  expected: %s" % hunkfind[hunklineno])
             warning("  actual  : %s" % line.rstrip(b"\r\n"))
             if fuzz:
@@ -1100,10 +1118,10 @@ class PatchSet(object):
                 break
 
         # check if processed line is the last line
-        if len(hunkfind) == 0 or lineno+1 == hunk.startsrc+len(hunkfind)-1:
-          debug(" hunk no.%d for file %s  -- is ready to be patched" % (hunkno+1, filenamen))
-          hunkno+=1
-          validhunks+=1
+        if len(hunkfind) == 0 or lineno == hunk.startsrc + len(hunkfind) - 1:
+          debug(" hunk no.%d for file %s  -- is ready to be patched" % (hunkno + 1, filenamen))
+          hunkno += 1
+          validhunks += 1
           if hunkno < len(p.hunks):
             hunk = p.hunks[hunkno]
           else:
@@ -1115,8 +1133,6 @@ class PatchSet(object):
         if hunkno < len(p.hunks):
           error("premature end of source file %s at hunk %d" % (filenameo, hunkno+1))
           errors += 1
-
-      f2fp.close()
 
       if validhunks < len(p.hunks):
         if self._match_file_hunks(filenameo, p.hunks):
@@ -1263,6 +1279,8 @@ class PatchSet(object):
       return line
 
     for hno, h in enumerate(hunks):
+      if original_startsrc := getattr(h, "original_startsrc", None):
+        info(f"Hunk #{hno + 1} applied with offset {h.startsrc - original_startsrc}")
       debug("hunk %d" % (hno+1))
       # skip to line just before hunk starts
       while srclineno < h.startsrc:
