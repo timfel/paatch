@@ -80,7 +80,7 @@ import logging
 import re
 import tempfile
 import codecs
-from io import BytesIO as StringIO
+from io import BytesIO
 import urllib.request as urllib_request
 
 from os.path import exists, isfile, abspath
@@ -213,7 +213,7 @@ def fromstring(s):
   """ Parse text string and return PatchSet()
       object (or False if parsing fails)
   """
-  ps = PatchSet( StringIO(s) )
+  ps = PatchSet( BytesIO(s) )
   if ps.errors == 0:
     return ps
   return False
