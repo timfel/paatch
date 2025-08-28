@@ -39,7 +39,7 @@ def load_version():
 
 setup(
     name='paatch',
-    python_requires='>=3.9',
+    python_requires='>=3.10',
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
@@ -75,6 +75,7 @@ setup(
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Build Tools',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.13'
@@ -106,8 +107,7 @@ setup(
     #},
 
     # If there are data files included in your packages that need to be
-    # installed, specify them here.  If using Python 2.6 or less, then these
-    # have to be included in MANIFEST.in as well.
+    # installed, specify them here.
     package_data={
         '': ['README.md', 'LICENSE'],
     },
