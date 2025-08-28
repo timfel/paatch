@@ -69,7 +69,6 @@
     ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 """
-from __future__ import print_function
 
 __author__ = "Tim Felgentreff <timfelgentreff@gmail.com>"
 __version__ = "1.20.2"
@@ -81,16 +80,8 @@ import logging
 import re
 import tempfile
 import codecs
-
-# cStringIO doesn't support unicode in 2.5
-try:
-  from StringIO import StringIO
-except ImportError:
-  from io import BytesIO as StringIO # python 3
-try:
-  import urllib2 as urllib_request
-except ImportError:
-  import urllib.request as urllib_request
+from io import BytesIO
+import urllib.request as urllib_request
 
 from os.path import exists, isfile, abspath
 import os
@@ -120,22 +111,10 @@ info = logger.info
 warning = logger.warning
 error = logger.error
 
-class NullHandler(logging.Handler):
-  """ Copied from Python 2.7 to avoid getting
-      `No handlers could be found for logger "patch"`
-      http://bugs.python.org/issue16539
-  """
-  def handle(self, record):
-    pass
-  def emit(self, record):
-    pass
-  def createLock(self):
-    self.lock = None
-
 streamhandler = logging.StreamHandler()
 
 # initialize logger itself
-logger.addHandler(NullHandler())
+logger.addHandler(logging.NullHandler())
 
 debugmode = False
 
@@ -234,7 +213,7 @@ def fromstring(s):
   """ Parse text string and return PatchSet()
       object (or False if parsing fails)
   """
-  ps = PatchSet( StringIO(s) )
+  ps = PatchSet( BytesIO(s) )
   if ps.errors == 0:
     return ps
   return False
