@@ -478,6 +478,39 @@ class TestPatchApply(unittest.TestCase):
         self.assertTrue(pto.apply(root=treeroot))
         self.assertTrue(os.stat(some_file).st_mode, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
+    def test_binary_patch(self):
+        orig = b'\xff\xfe\xfd\nSecondLine\r\nThirdLine\x00Binary!\n'
+        fname = 'binary_target.bin'
+        with open(fname, 'wb') as f:
+            f.write(orig)
+        diff = b"""\
+--- binary_target.bin\t2025-09-19 10:00:00
++++ binary_target.bin\t2025-09-19 10:02:00
+@@ -1,2 +1,3 @@
+-\xff\xfe\xfd
++BinaryPatched
+ SecondLine
++NEWBINLINE\x00
+ ThirdLine\x00Binary!
+"""
+        diff_file = 'patch_binary.diff'
+        with open(diff_file, 'wb') as f:
+            f.write(diff)
+        try:
+            res = subprocess.run(
+              [sys.executable, join(dirname(TESTS), "paatch.py"), diff_file],
+              stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8'
+            )
+            assert res.returncode == 0, f"Nonzero returncode: {res.returncode}\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
+            with open(fname, 'rb') as f:
+                contents = f.read()
+            assert b'BinaryPatched\n' in contents, 'Patched content not applied in binary mode!'
+            assert b'NEWBINLINE\x00' in contents, 'Patched binary line missing!'
+        finally:
+            for fn in [fname, diff_file, fname+'.orig']:
+              if os.path.exists(fn):
+                os.remove(fn)
+
 
 class TestHelpers(unittest.TestCase):
     # unittest setting
