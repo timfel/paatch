@@ -30,7 +30,6 @@ http://pypi.python.org/pypi/coverage/ and run this file with:
 On Windows it may be more convenient instead of `coverage` call
 `python -m coverage`
 """
-from __future__ import print_function
 
 import os
 import sys
@@ -43,10 +42,6 @@ import subprocess
 from os import listdir, chmod
 from os.path import abspath, dirname, exists, join, isdir, isfile
 from tempfile import mkdtemp
-try:
-  getcwdu = os.getcwdu
-except AttributeError:
-  getcwdu = os.getcwd  # python 3, where getcwd always returns a unicode object
 
 verbose = False
 if "-v" in sys.argv or "--verbose" in sys.argv:
@@ -162,7 +157,7 @@ class TestPatchFiles(unittest.TestCase):
       # 3.
       # test utility as a whole
       patch_tool = join(dirname(TESTS), "paatch.py")
-      save_cwd = getcwdu()
+      save_cwd = os.getcwd()
       os.chdir(tmpdir)
       extra = "-f" if "10fuzzy" in testname else ""
       if not verbose:
@@ -226,7 +221,7 @@ add_test_methods(TestPatchFiles)
 
 class TestCheckPatched(unittest.TestCase):
     def setUp(self):
-        self.save_cwd = getcwdu()
+        self.save_cwd = os.getcwd()
         os.chdir(TESTS)
 
     def tearDown(self):
@@ -377,7 +372,7 @@ for filename in os.listdir(TESTDATA):
 
 class TestPatchApply(unittest.TestCase):
     def setUp(self):
-        self.save_cwd = getcwdu()
+        self.save_cwd = os.getcwd()
         self.tmpdir = mkdtemp(prefix=self.__class__.__name__)
         os.chdir(self.tmpdir)
 
