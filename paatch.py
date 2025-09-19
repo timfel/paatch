@@ -71,7 +71,7 @@
 """
 
 __author__ = "Tim Felgentreff <timfelgentreff@gmail.com>"
-__version__ = "1.20.2"
+__version__ = "1.20.3"
 __license__ = "UPL"
 __url__ = "https://github.com/timfel/paatch"
 
