@@ -981,7 +981,7 @@ class PatchSet(object):
 
 
 
-  def apply(self, strip=0, root=None, fuzz=False):
+  def apply(self, strip=0, root=None, fuzz=False, binary=False):
     """ Apply parsed patch, optionally stripping leading components
         from file paths. `root` parameter specifies working dir.
         :param strip: Strip patch path
@@ -1150,7 +1150,7 @@ class PatchSet(object):
           errors += 1
         else:
           shutil.move(filenamen, backupname)
-          if self.write_hunks(backupname if filenameo == filenamen else filenameo, filenamen, p.hunks):
+          if self.write_hunks(backupname if filenameo == filenamen else filenameo, filenamen, p.hunks, binary=binary):
             info("successfully patched %d/%d:\t %s" % (i+1, total, filenamen))
             safe_unlink(backupname)
             if new == b'/dev/null':
@@ -1247,7 +1247,7 @@ class PatchSet(object):
     return matched
 
 
-  def patch_stream(self, instream, hunks):
+  def patch_stream(self, instream, hunks, binary=False):
     """ Generator that yields stream patched with hunks iterable
 
         Converts lineends in hunk lines to the best suitable format
@@ -1299,6 +1299,8 @@ class PatchSet(object):
             srclineno += 1
             continue
           line2write = hline[1:]
+          if binary:
+            yield line2write
           # detect if line ends are consistent in source file
           if sum([bool(lineends[x]) for x in lineends]) == 1:
             newline = [x for x in lineends if lineends[x] != 0][0]
@@ -1310,13 +1312,13 @@ class PatchSet(object):
       yield line
 
 
-  def write_hunks(self, srcname, tgtname, hunks):
+  def write_hunks(self, srcname, tgtname, hunks, binary=False):
     src = open(srcname, "rb")
     tgt = open(tgtname, "wb")
 
     debug("processing target file %s" % tgtname)
 
-    tgt.writelines(self.patch_stream(src, hunks))
+    tgt.writelines(self.patch_stream(src, hunks, binary=binary))
 
     tgt.close()
     src.close()
@@ -1360,9 +1362,11 @@ def main():
                                            help="strip N path components from filenames")
   opt.add_option("--revert", action="store_true",
                                            help="apply patch in reverse order (unpatch)")
-  opt.add_option("-f", "--fuzz", action="store_true", dest="fuzz", help="Accept fuuzzy patches")
+  opt.add_option("-f", "--fuzz", action="store_true", dest="fuzz", help="Accept fuzzy patches")
   opt.add_option("-i", "--input", metavar='PATCHFILE',
                                            help="Read patch from PATCHFILE instead of stdin.")
+  opt.add_option("--binary", action="store_true",
+                 help="Disable the heuristic for transforming line endings.")
   (options, args) = opt.parse_args()
 
   if not args and not options.input and sys.argv[-1:] != ['--']:
